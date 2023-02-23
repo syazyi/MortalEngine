@@ -1,0 +1,10 @@
+set(EXENAME SandBox)
+if(MSVC)
+    add_definitions(-DMORTAL_PLATFORM_WINDOWS)
+endif(MSVC)
+
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+add_executable(${EXENAME} "src/main.cpp")
+target_link_libraries(${EXENAME} PUBLIC Mortal)
+target_link_directories(${EXENAME} PUBLIC ${PROJECT_SOURCE_DIR}/bin/dll) 
+#target_include_directories(${EXENAME} PUBLIC ../Mortal)
