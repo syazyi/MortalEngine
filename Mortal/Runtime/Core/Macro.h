@@ -11,5 +11,6 @@
     #define MORTAL_API
 #endif
 
+#include "Logger/LoggerMacro.h"
 
 #endif

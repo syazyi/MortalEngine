@@ -1,14 +1,2 @@
-set(LIBPROJECT_NAME Mortal)
-set(MORTAL_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-if(MSVC)
-    add_definitions(-DMORTAL_PLATFORM_WINDOWS -DMORTAL_BUILD_DLL)
-endif()
-
-file(GLOB_RECURSE HEADER_FILE "*.h")
-file(GLOB_RECURSE SOURCE_FILE "*.cpp")
-
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILE} ${SOURCE_FILE})
-
-add_library(${LIBPROJECT_NAME} SHARED ${HEADER_FILE} ${SOURCE_FILE})
-target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH})
-set_target_properties(${LIBPROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/dll)
+add_subdirectory(3rdPart)
+add_subdirectory(Runtime)

@@ -4,17 +4,13 @@
 #include "Core/Core.h"
 namespace mortal{
 
-
-
-class Application{
+class MORTAL_API Application{
 public:
     Application() = default;
 
     virtual void Run();
 };
 
-
-
-}
+}//namespace mortal
 
 #endif
