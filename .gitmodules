@@ -1,0 +1,4 @@
+[submodule "Mortal/3rdPart/glfw"]
+	path = Mortal/3rdPart/glfw
+	url = https://github.com/syazyi/glfw.git
+	branch = main
