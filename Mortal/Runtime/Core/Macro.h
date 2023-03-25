@@ -1,5 +1,4 @@
-#ifndef MACRO_H
-#define MACRO_H
+#pragma once
 
 #ifdef MORTAL_PLATFORM_WINDOWS
     #ifdef MORTAL_BUILD_DLL
@@ -11,6 +10,3 @@
     #define MORTAL_API
 #endif
 
-#include "Logger/LoggerMacro.h"
-
-#endif

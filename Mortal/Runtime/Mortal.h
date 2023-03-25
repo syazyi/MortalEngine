@@ -1,6 +1,2 @@
-#ifndef MORTAL_H_
-#define MORTAL_H_
+#pragma once
 #include "Application/Application.h"
-
-
-#endif

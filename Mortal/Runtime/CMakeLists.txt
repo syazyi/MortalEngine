@@ -16,9 +16,13 @@ target_link_libraries(${LIBPROJECT_NAME} PUBLIC spdlog::spdlog)
 
 #runtime path
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH})
-
+#Core path
+target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Core)
 #3rd Library Path
 
 
 #Set output path
 set_target_properties(${LIBPROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+#set precompiled header
+target_precompile_headers(${LIBPROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)

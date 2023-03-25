@@ -1,6 +1,4 @@
-#ifndef APPLICATION_H_
-#define APPLICATION_H_
-
+#pragma once
 #include "Core/Core.h"
 namespace mortal{
 
@@ -13,4 +11,3 @@ public:
 
 }//namespace mortal
 
-#endif

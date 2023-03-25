@@ -1,8 +1,7 @@
-#ifndef CORE_H_
-#define CORE_H_
+#pragma once
 #include "Macro.h"
+#include "Logger/LoggerMacro.h"
 
-#endif
 
 
 

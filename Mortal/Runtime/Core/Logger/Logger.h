@@ -1,7 +1,6 @@
 #ifndef LOGGER_H_
 #define LOGGER_H_
 
-#include <memory>
 #include "Core/Core.h"
 #include "spdlog/spdlog.h"
 
