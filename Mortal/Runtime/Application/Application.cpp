@@ -1,28 +1,37 @@
 #include "Application.h"
 
-#include "Events/WindowResizeEvent.h"
+#include <functional>
+#include "Events/WindowEvent.h"
 #include "Events/EventDispatcher.h"
 namespace mortal
 {
-    void OnWindowResizeEvent(Event& event){
-        auto windowResizeEvent = dynamic_cast<WindowResizeEvent&>(event);
-        MORTAL_LOG_INFO("%d, %d", windowResizeEvent.m_width, windowResizeEvent.m_height);
-        //printf("%d, %d", windowResizeEvent.m_width, windowResizeEvent.m_height);
+
+    Application::Application(Window* window) : m_window(window)
+    {
+        //m_window->SetCallback([](Event& event){});
+
+        m_window->SetCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
     }
-void Application::Run(){
-    EventDispatcher dispatch;
+    void Application::Run(){
+    auto& ep = EventDispatcher::GetInstance();
+    ep.Subscribe(EventType::EWindowColse, [this](Event& e) {
+        this->ShouldClose = true;
+        });
     MORTAL_LOG_INFO("Running...")
-    
-    WindowResizeEvent wre;
-    wre.m_width = 100;
-    wre.m_height = 50;
 
-    dispatch.Subscribe(EventType::EWindowResize, OnWindowResizeEvent);
-
-    dispatch.Dispatch(wre);
+    while (!ShouldClose) {
+        //dispatch.Dispatch(wre);
+        m_window->Update();
+    }
     MORTAL_LOG_INFO("End!")
 }
 
+    void Application::OnEvent(Event& e)
+    {
+        EventDispatcher::GetInstance().Dispatch(e);
+        
+        MORTAL_LOG_INFO("{0}", e);
+    }
 
 
 } // namespace mortal

@@ -5,12 +5,21 @@ namespace mortal
 {
     class EventDispatcher{
     public:
-        EventDispatcher() = default;
+        EventDispatcher(const EventDispatcher&) = delete;
+        EventDispatcher& operator=(const EventDispatcher&) = delete;
 
-        using CallbackFunc = void(*)(Event&);
+        EventDispatcher(EventDispatcher&&) = delete;
+        EventDispatcher operator=(EventDispatcher&&) = delete;
+
+        static EventDispatcher& GetInstance() {
+            static EventDispatcher dispatcher;
+            return dispatcher;
+        }
+        using CallbackFunc = std::function<void(Event&)>;
         void Dispatch(Event& event);
         void Subscribe(EventType type, CallbackFunc func);
     private:
+        EventDispatcher() = default;
         std::map<EventType, CallbackFunc> m_dispatchMap; 
     };
 
