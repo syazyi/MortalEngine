@@ -4,7 +4,7 @@ if(MSVC)
 endif(MSVC)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-add_executable(${EXENAME} "src/main.cpp")
+add_executable(${EXENAME} "src/main.cpp" "src/sandbox.cpp" "src/sandbox.h")
 target_link_libraries(${EXENAME} PUBLIC Mortal)
 target_link_directories(${EXENAME} PUBLIC ${PROJECT_SOURCE_DIR}/bin/dll) 
 #target_include_directories(${EXENAME} PUBLIC ../Mortal)

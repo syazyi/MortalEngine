@@ -21,6 +21,10 @@ namespace mortal
 
     while (!ShouldClose) {
         //dispatch.Dispatch(wre);
+
+        for (auto layer : m_stack) {
+            layer->OnUpdate();
+        }
         m_window->Update();
     }
     MORTAL_LOG_INFO("End!")
@@ -31,6 +35,20 @@ namespace mortal
         EventDispatcher::GetInstance().Dispatch(e);
         
         MORTAL_LOG_INFO("{0}", e);
+
+        for (auto layer : m_stack) {
+            layer->OnEvent(e);
+        }
+    }
+
+    void Application::PushLayer(Layer* layer)
+    {
+        m_stack.PushLayer(layer);
+    }
+
+    void Application::PushOverlay(Layer* layer)
+    {
+        m_stack.PushOverlay(layer);
     }
 
 
