@@ -14,6 +14,7 @@ add_library(${LIBPROJECT_NAME} SHARED ${HEADER_FILE} ${SOURCE_FILE})
 #link 3rdLib
 target_link_libraries(${LIBPROJECT_NAME} PUBLIC spdlog::spdlog)
 target_link_libraries(${LIBPROJECT_NAME} PUBLIC glfw)
+target_link_libraries(${LIBPROJECT_NAME} PUBLIC imgui)   
 
 #runtime path
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH})

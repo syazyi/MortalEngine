@@ -1,5 +1,6 @@
 #pragma once 
 #include "spdlog/fmt/ostr.h"
+
 namespace mortal
 {
     enum class EventType{

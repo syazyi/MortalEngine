@@ -6,3 +6,6 @@
 	path = Mortal/3rdPart/spdlog
 	url = https://github.com/syazyi/spdlog.git
 	
+[submodule "Mortal/3rdPart/imgui"]
+	path = Mortal/3rdPart/imgui
+	url = https://github.com/syazyi/imgui.git
