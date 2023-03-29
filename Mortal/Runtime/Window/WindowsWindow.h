@@ -1,7 +1,7 @@
 #pragma once 
-
-#include "Window/Window.h"
+#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
+#include "Window/Window.h"
 namespace mortal
 {
     class MORTAL_API WindowsWindow : public Window{
