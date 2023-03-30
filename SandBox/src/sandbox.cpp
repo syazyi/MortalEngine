@@ -1,10 +1,11 @@
 #include "sandbox.h"
-
+#include "Rendering/rendering_system.h"
 namespace mortal {
 
 	SandBox::SandBox(Window* window) : Application(window)
 	{
 		PushLayer(new ExamLayer());
+		PushLayer(RenderingSystem::GetInstance());
 	}
 
 	ExamLayer::ExamLayer() : Layer("examLayer")

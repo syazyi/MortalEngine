@@ -20,6 +20,9 @@ target_link_libraries(${LIBPROJECT_NAME} PUBLIC imgui)
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH})
 #Core path
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Core)
+#Function path
+target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Function)
+
 #3rd Library Path
 
 

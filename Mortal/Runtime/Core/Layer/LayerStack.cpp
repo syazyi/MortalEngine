@@ -16,6 +16,7 @@ namespace mortal
 
     void LayerStack::PushLayer(Layer* layer)
     {
+        m_LayerInsert = m_Layers.begin();
         m_Layers.emplace(m_LayerInsert, layer);
     }
 
