@@ -116,4 +116,10 @@ namespace mortal
         vkDestroyInstance(info.instance, info.allocation);
     }
 
+    void CheckVulkanResult(VkResult& result) {
+        if (result != VK_SUCCESS) {
+            std::runtime_error("failed to pass check");
+        }
+    }
+
 } // namespace mortal

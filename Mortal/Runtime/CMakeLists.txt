@@ -9,7 +9,7 @@ file(GLOB_RECURSE SOURCE_FILE "*.cpp" )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILE} ${SOURCE_FILE})
 
-add_library(${LIBPROJECT_NAME} SHARED ${HEADER_FILE} ${SOURCE_FILE})
+add_library(${LIBPROJECT_NAME} STATIC ${HEADER_FILE} ${SOURCE_FILE})
 
 #link 3rdLib
 target_link_libraries(${LIBPROJECT_NAME} PUBLIC spdlog::spdlog)

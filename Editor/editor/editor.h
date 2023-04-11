@@ -5,11 +5,11 @@
 #include "Layer/LayerStack.h"
 namespace mortal{
 
-    class MORTAL_API Application{
+    class Editor final{
     public:
-        Application(Window* window);
-        virtual ~Application(){}
-        virtual void Run();
+        Editor(Window* window);
+        ~Editor(){}
+        void Run();
         void OnEvent(Event& e);
         bool ShouldClose{false};
 
@@ -20,5 +20,11 @@ namespace mortal{
         std::unique_ptr<Window> m_window;
     };
 
+    class ExamLayer : public Layer {
+    public:
+        ExamLayer();
+        void OnUpdate() override;
+        void OnEvent(Event& e) override;
+    };
 }//namespace mortal
 

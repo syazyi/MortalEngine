@@ -14,11 +14,7 @@ namespace mortal
         VkQueue queue{VK_NULL_HANDLE};
     };
     
-    void CheckVulkanResult(VkResult& result) {
-        if (result != VK_SUCCESS) {
-            std::runtime_error("failed to pass check");
-        }
-    }
+    void CheckVulkanResult(VkResult& result);
     
     class MORTAL_API RenderingSystem : public Layer{
     public:

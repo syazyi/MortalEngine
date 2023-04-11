@@ -6,6 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 
 project(Mortal)
-add_subdirectory(SandBox)
+add_subdirectory(Editor)
 
 add_subdirectory(Mortal)
