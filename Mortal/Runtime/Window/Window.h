@@ -5,7 +5,6 @@
 #include "Events/Event.h"
 namespace mortal
 {
-    
     using EventCallback = std::function<void(Event&)>;
     class MORTAL_API Window{
     public:

@@ -1,21 +1,16 @@
 #pragma once 
 #include "Mortal.h"
-#include "vulkan/vulkan.h"
 #include "Layer/Layer.h"
+#include "rendering.h"
+#include "Rendering/rendering_device.h"
 
 namespace mortal
 {
     struct RenderingSystemInfo
     {
-        VkInstance instance {VK_NULL_HANDLE};
-        VkAllocationCallbacks* allocation{ nullptr };
-        VkPhysicalDevice physical_device{ VK_NULL_HANDLE };
-        VkDevice logic_device { VK_NULL_HANDLE };
-        VkQueue queue{VK_NULL_HANDLE};
+        RenderingDevice device;
     };
-    
-    void CheckVulkanResult(VkResult& result);
-    
+
     class MORTAL_API RenderingSystem : public Layer{
     public:
         ~RenderingSystem();
@@ -31,11 +26,11 @@ namespace mortal
         void ClearUpVulkan();
 
         inline RenderingSystemInfo& GetVulkanInfo(){
-            return info;
+            return m_Info;
         }
 
+        RenderingSystemInfo m_Info;
     private:
-        RenderingSystemInfo info;
         RenderingSystem();
     };
 

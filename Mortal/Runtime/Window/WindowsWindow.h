@@ -19,13 +19,17 @@ namespace mortal
             return !glfwWindowShouldClose(m_window);
         }
 
+        [[nodiscard]] static MortalWindowType* GetWindow() {
+            return m_window;
+        }
+
     private:
         void Init();
         void ShutDown();
     private:
         WindowCreateInfo m_createInfo;
 
-        GLFWwindow* m_window;
+        inline static MortalWindowType* m_window{nullptr};
     };
 
 

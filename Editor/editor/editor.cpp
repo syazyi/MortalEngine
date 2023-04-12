@@ -61,12 +61,12 @@ namespace mortal
 
 	void ExamLayer::OnUpdate()
 	{
-		MORTAL_LOG_INFO("ExamLayer::Update");
+		//MORTAL_LOG_INFO("ExamLayer::Update");
 	}
 
 	void ExamLayer::OnEvent(Event& e)
 	{
-		MORTAL_LOG_TRACE("{0}", e)
+		//MORTAL_LOG_TRACE("{0}", e)
 	}
 
 } // namespace mortal
