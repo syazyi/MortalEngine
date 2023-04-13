@@ -1,4 +1,4 @@
 # Update Log
 
 * 4-12 add device and surface
-* refactor and add swapchain
+* 4-13 refactor and add swapchain
