@@ -4,41 +4,16 @@
 
 namespace mortal {
 
-	void RenderingDevice::SetDevice(MortalWindowType* window)
+	void RenderingDevice::SetDevice(vk::Instance& instance, vk::SurfaceKHR& surface)
 	{
         vk::Result result;
-        if constexpr (EnableValidtion) {
-            s_LayerNames.push_back("VK_LAYER_KHRONOS_validation");
-            CheckValidtionLayer();
-        }
         s_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        //Set Vulkan Instance
-        {
-            vk::ApplicationInfo appInfo("Mortal", 1, "Mortal Engine", 1, VK_API_VERSION_1_3);
-
-            auto extensions = GetRequireExtensions();
-            vk::InstanceCreateInfo createInfo({}, &appInfo, s_LayerNames, extensions);
-            
-            m_Instance = vk::createInstance(createInfo);
-
-            SetDebugCallBack();
-        }
-
-        //set surface , This section is platform-specific
-        {
-            if constexpr (Mortal_PlatformID == 1) {
-                //in Windows
-               
-                vk::Win32SurfaceCreateInfoKHR createInfo({}, GetModuleHandle(nullptr), glfwGetWin32Window(window));
-                m_Surface =  m_Instance.createWin32SurfaceKHR(createInfo);
-            }
-        }
 
         uint32_t queueFamilyIndex_GraphicPresent = 0;
         uint32_t queueFamilyIndex_Compute = 0;
         //Get Physical Device and queue family index
         {
-            ChooseSuitablePhysicalDevice();
+            ChooseSuitablePhysicalDevice(instance);
 
             uint32_t queueFamilyCount = 0;
             std::vector<vk::QueueFamilyProperties> properties = m_PhysicalDevice.getQueueFamilyProperties();
@@ -46,8 +21,9 @@ namespace mortal {
             uint32_t temp = 0;
             for (auto& property : properties) {
                 if (property.queueFlags & vk::QueueFlagBits::eGraphics) {
-                    //m_PhysicalDevice.getSurfaceSupportKHR();
-                    queueFamilyIndex_GraphicPresent = temp;
+                    if (m_PhysicalDevice.getSurfaceSupportKHR(temp, surface)) {
+                        queueFamilyIndex_GraphicPresent = temp;
+                    }
                 }
                 //if you want to use compute shader
                 if constexpr (EnableCompute) {
@@ -60,7 +36,9 @@ namespace mortal {
         }
         //Set Queue Index
         {
-            m_Queues.GraphicPresenQueueFamilyIndex = queueFamilyIndex_GraphicPresent;
+            //Set same queue family
+            m_Queues.GraphicQueueFamilyIndex = queueFamilyIndex_GraphicPresent;
+            m_Queues.PresentQueueFamilyIndex = queueFamilyIndex_GraphicPresent;
             //compute shader enable
             if constexpr (EnableCompute) {
                 m_Queues.ComputeQueueFamilyIndex = queueFamilyIndex_Compute;
@@ -69,27 +47,32 @@ namespace mortal {
 
         //Create Logic Device and Get Queue
         {
-            std::vector<float> queuePriorites{ 1.0f };
-            vk::DeviceQueueCreateInfo queueCreateInfo({}, m_Queues.GraphicPresenQueueFamilyIndex.value(), queuePriorites);
 
+            std::set<uint32_t> queueIndices{m_Queues.GraphicQueueFamilyIndex.value(),
+               m_Queues.PresentQueueFamilyIndex.value()};
+
+            std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+            for (auto& queueIndex : queueIndices) {
+                float queuePriorites = 1.0f;
+                vk::DeviceQueueCreateInfo createInfo({}, queueIndex, 1, &queuePriorites);
+                queueCreateInfos.push_back(createInfo);
+            }
             auto feature = EnablePhysicalFeature();
-            vk::DeviceCreateInfo createInfo({}, queueCreateInfo, s_LayerNames, s_DeviceExtensions, &feature);
+            vk::DeviceCreateInfo createInfo({}, queueCreateInfos, s_LayerNames, s_DeviceExtensions, &feature);
 
             m_LogicDevice =  m_PhysicalDevice.createDevice(createInfo);
 
-            m_Queues.GraphicPresentQueue = m_LogicDevice.getQueue(m_Queues.GraphicPresenQueueFamilyIndex.value(), 0);
+            m_Queues.GraphicQueue = m_LogicDevice.getQueue(m_Queues.GraphicQueueFamilyIndex.value(), 0);
+            m_Queues.PresentQueue = m_LogicDevice.getQueue(m_Queues.PresentQueueFamilyIndex.value(), 0);
             if constexpr (EnableCompute) {
                 m_Queues.ComputeQueue = m_LogicDevice.getQueue(m_Queues.ComputeQueueFamilyIndex.value(), 0);
             }
         }
 	}
 
-    void RenderingDevice::ClearUpDevice()
+    void RenderingDevice::ClearUp()
     {
         m_LogicDevice.destroy();
-        this->GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", callback, nullptr);
-        m_Instance.destroySurfaceKHR(m_Surface);
-        m_Instance.destroy();
     }
 
     vk::PhysicalDeviceFeatures RenderingDevice::EnablePhysicalFeature()
@@ -98,32 +81,6 @@ namespace mortal {
         features.samplerAnisotropy = VK_TRUE;
         features.sampleRateShading = VK_TRUE;
         return features;
-    }
-
-    void RenderingDevice::SetDebugCallBack()
-    {
-        if constexpr (EnableValidtion) {
-            vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo({},
-                vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning,
-                vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-                &debugCallback);
-            
-            GetAndExecuteFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT", &(VkDebugUtilsMessengerCreateInfoEXT)debugUtilsCreateInfo,
-                nullptr, 
-                &callback);
-        }
-    }
-
-    //create instance
-    std::vector<const char*> RenderingDevice::GetRequireExtensions()
-    {
-        uint32_t extensionsCount = 0;
-        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
-        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + extensionsCount);
-        if constexpr (EnableValidtion) {
-            extensions.push_back("VK_EXT_debug_utils");
-        }
-        return extensions;
     }
 
 //physical device
@@ -143,14 +100,19 @@ namespace mortal {
         return m_LogicDevice;
     }
 
+    vk::PhysicalDevice& RenderingDevice::GetPhysicalDevice()
+    {
+        return m_PhysicalDevice;
+    }
+
     RenderingQueue& RenderingDevice::GetRenderingQueue()
     {
         return m_Queues;
     }
 
-    void RenderingDevice::ChooseSuitablePhysicalDevice()
+    void RenderingDevice::ChooseSuitablePhysicalDevice(vk::Instance& instance)
     {
-        std::vector<vk::PhysicalDevice> pDevices = m_Instance.enumeratePhysicalDevices();
+        std::vector<vk::PhysicalDevice> pDevices = instance.enumeratePhysicalDevices();
 
         for (auto& pDevice : pDevices) {
             vk::PhysicalDeviceProperties properties = pDevice.getProperties();
@@ -172,31 +134,5 @@ namespace mortal {
     }
 
 //validation layer set
-    bool RenderingDevice::CheckValidtionLayer()
-    {
-
-        std::vector<vk::ExtensionProperties> layerNames = vk::enumerateInstanceExtensionProperties();
-        bool result = false;
-        for (auto& sLayerName : s_LayerNames) {
-            for (auto& layerName : layerNames) {
-                if (strcmp(layerName.extensionName, sLayerName) == 0) {
-                    result |= true;
-                }   
-            }
-            if (result == false) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    VKAPI_ATTR VkBool32 VKAPI_CALL RenderingDevice::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
-        VkDebugUtilsMessageTypeFlagsEXT messageType, 
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
-        void* pUserData)
-    {
-        std::cerr << "validation layer: \n" << pCallbackData->pMessage << "\n\n";
-        return VK_FALSE;
-    }
 
 }

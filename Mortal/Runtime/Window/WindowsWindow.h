@@ -19,6 +19,8 @@ namespace mortal
             return !glfwWindowShouldClose(m_window);
         }
 
+        MortalWindowType* GetWindowNativeHandle() const override;
+
         [[nodiscard]] static MortalWindowType* GetWindow() {
             return m_window;
         }

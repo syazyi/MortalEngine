@@ -2,8 +2,6 @@
 #include "Events/WindowEvent.h"
 namespace mortal{
     
-
-
     WindowsWindow::WindowsWindow(const WindowCreateInfo& createInfo) : m_createInfo(createInfo)
     {
         Init();
@@ -38,12 +36,17 @@ namespace mortal{
         
     }
 
+    MortalWindowType* WindowsWindow::GetWindowNativeHandle() const
+    {
+        return GetWindow();
+    }
+
     void WindowsWindow::Init()
     {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-        m_window = glfwCreateWindow(m_createInfo.width, m_createInfo.height, m_createInfo.pTitle, nullptr, nullptr);
+        m_window = glfwCreateWindow(m_createInfo.width, m_createInfo.height, "Mortal", nullptr, nullptr);
         glfwSetWindowUserPointer(m_window, &m_createInfo);
 
         glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {

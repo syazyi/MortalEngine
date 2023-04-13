@@ -15,7 +15,7 @@ namespace mortal
 
         virtual uint32_t GetWidth() const = 0;
         virtual uint32_t GetHeight() const = 0;
-
+        virtual MortalWindowType* GetWindowNativeHandle() const = 0;
         virtual void Update() = 0;
         virtual bool CheckShouldBeClose() = 0;
         //virtual void SetVSync(bool enable) = 0;

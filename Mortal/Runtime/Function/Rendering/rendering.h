@@ -29,4 +29,6 @@ namespace mortal
     vk::Result LoadFunction() {
         auto func = reinterpret_cast<T>()
     }
+
+    static std::vector<const char*> s_LayerNames;
 } // namespace mortal
