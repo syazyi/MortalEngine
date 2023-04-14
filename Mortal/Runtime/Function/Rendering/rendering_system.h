@@ -1,18 +1,24 @@
 #pragma once 
 #include "Mortal.h"
+
+#include<memory>
+
 #include "Layer/Layer.h"
 #include "rendering.h"
 #include "rendering_device.h"
 #include "rendering_window.h"
 #include "rendering_swapchain.h"
+#include "rendering_command.h"
 namespace mortal
 {
+    class RenderPassBase;
     struct RenderingSystemInfo
     {
         RenderingSystemInfo() = default;
         RenderingWindow window;
         RenderingDevice device;
         RenderingSwapChain swapchain;
+        RenderCommand command;
     };
 
     class MORTAL_API RenderingSystem : public Layer{
@@ -33,6 +39,13 @@ namespace mortal
             return m_Info;
         }
 
+        virtual void OnUpdate() override;
+        virtual void OnEvent(Event& e) override;
+
+        template<typename T, typename = std::enable_if_t<std::is_base_of_v<RenderPassBase, T>>>
+        void AddRenderPass(T* pass) {
+            m_RenderPasses.push_back(std::unique_ptr<T>(pass));
+        }
 
     private:
         RenderingSystem();
@@ -66,11 +79,15 @@ namespace mortal
             auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
             func(m_Instance, std::forward<Args>(args)...);
         }
+
+        void AddRenderPasses();
+
     private:
         vk::Instance m_Instance;
         VkDebugUtilsMessengerEXT callback;
         RenderingSystemInfo m_Info;
 
+        std::vector<std::unique_ptr<RenderPassBase>> m_RenderPasses;
     };
 
 

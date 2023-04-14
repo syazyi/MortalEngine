@@ -30,9 +30,9 @@ namespace mortal
     //physical funciton
         [[nodiscard]] vk::PhysicalDeviceProperties GetPhysicalDevicePropertires();
         [[nodiscard]] vk::PhysicalDeviceFeatures GetPhysicalDeviceFeature();
-        vk::Device& GetDevice();
-        vk::PhysicalDevice& GetPhysicalDevice();
-        RenderingQueue& GetRenderingQueue();
+        [[nodiscard]] vk::Device& GetDevice();
+        [[nodiscard]] vk::PhysicalDevice& GetPhysicalDevice();
+        [[nodiscard]] RenderingQueue& GetRenderingQueue();
 
     private:
         void ChooseSuitablePhysicalDevice(vk::Instance& instance);

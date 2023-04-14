@@ -18,6 +18,7 @@ namespace mortal
 
     constexpr bool EnableCompute = false;
 
+    constexpr uint8_t MaxFrameInFlight = 2;
 
      static void CheckVulkanResult(vk::Result& result, vk::Result condition, const char* message) {
         if (result != condition) {

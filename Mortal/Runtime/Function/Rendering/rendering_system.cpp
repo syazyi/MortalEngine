@@ -1,12 +1,27 @@
 #include "rendering_system.h"
 #include "Rendering/rendering_device.h"
 #include "Window/WindowsWindow.h"
+
+#include "rendering_pass_base.h"
+#include "Rendering/Pass/triangle.h"
 namespace mortal
 {
+    void RenderingSystem::OnUpdate()
+    {
+        for (auto& pass : m_RenderPasses) {
+            pass->Draw();
+        }
+    }
+
+    void RenderingSystem::OnEvent(Event& e)
+    {
+
+    }
 
     RenderingSystem::RenderingSystem() : Layer("Render Layer")
     {
         SetUpVulkan();
+        AddRenderPasses();
     }
 
     RenderingSystem::~RenderingSystem()
@@ -20,10 +35,12 @@ namespace mortal
         m_Info.window.SetWindow(m_Instance);
         m_Info.device.SetDevice(m_Instance, m_Info.window.GetSurface());
         m_Info.swapchain.Create(m_Info.device, m_Info.window);
+        m_Info.command.SetCommandPool(m_Info.device);
     }
 
     void RenderingSystem::ClearUpVulkan()
     {
+        m_Info.command.ClearUp();
         m_Info.swapchain.ClearUp();
         m_Info.device.ClearUp();
         m_Info.window.ClearUp(m_Instance);
@@ -104,6 +121,11 @@ namespace mortal
     {
         std::cerr << "validation layer: \n" << pCallbackData->pMessage << "\n\n";
         return VK_FALSE;
+    }
+
+    void RenderingSystem::AddRenderPasses()
+    {
+        AddRenderPass(new TrianglePass(m_Info));
     }
 
 } // namespace mortal

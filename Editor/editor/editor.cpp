@@ -12,7 +12,8 @@ namespace mortal
         //m_window->SetCallback([](Event& event){});
 
         m_window->SetCallback(std::bind(&Editor::OnEvent, this, std::placeholders::_1));
-        PushLayer(new ExamLayer());
+        //PushLayer(new ExamLayer());
+
 		PushLayer(RenderingSystem::GetInstance());
     }
     void Editor::Run(){
@@ -54,19 +55,19 @@ namespace mortal
         m_stack.PushOverlay(layer);
     }
 
-    	ExamLayer::ExamLayer() : Layer("examLayer")
-	{
-		
-	}
+ //   	ExamLayer::ExamLayer() : Layer("examLayer")
+	//{
+	//	
+	//}
 
-	void ExamLayer::OnUpdate()
-	{
-		//MORTAL_LOG_INFO("ExamLayer::Update");
-	}
+	//void ExamLayer::OnUpdate()
+	//{
+	//	//MORTAL_LOG_INFO("ExamLayer::Update");
+	//}
 
-	void ExamLayer::OnEvent(Event& e)
-	{
-		//MORTAL_LOG_TRACE("{0}", e)
-	}
+	//void ExamLayer::OnEvent(Event& e)
+	//{
+	//	//MORTAL_LOG_TRACE("{0}", e)
+	//}
 
 } // namespace mortal

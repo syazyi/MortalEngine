@@ -20,11 +20,11 @@ namespace mortal{
         std::unique_ptr<Window> m_window;
     };
 
-    class ExamLayer : public Layer {
-    public:
-        ExamLayer();
-        void OnUpdate() override;
-        void OnEvent(Event& e) override;
-    };
+    //class ExamLayer : public Layer {
+    //public:
+    //    ExamLayer();
+    //    void OnUpdate() override;
+    //    void OnEvent(Event& e) override;
+    //};
 }//namespace mortal
 
