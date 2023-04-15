@@ -57,7 +57,7 @@ namespace mortal
 		device.destroySwapchainKHR(m_SwapChain);
 	}
 
-	SurfaceDetail& RenderingSwapChain::GetSurfaceDetail(RenderingDevice& rDevice)
+	SurfaceDetail& RenderingSwapChain::GetSurfaceDetail()
 	{
 		return m_SurfaceDetail;
 	}
@@ -65,6 +65,11 @@ namespace mortal
 	std::vector<vk::ImageView>& RenderingSwapChain::GetSwapChainImageViews()
 	{
 		return m_SwapChainImageViews;
+	}
+
+	vk::SwapchainKHR& RenderingSwapChain::GetSwapChain()
+	{
+		return m_SwapChain;
 	}
 
 	void RenderingSwapChain::CreateSwapChain()

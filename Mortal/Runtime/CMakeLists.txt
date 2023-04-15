@@ -24,7 +24,10 @@ target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Core)
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Function)
 
 #3rd Library Path
+# add vulkan in imgui.cmake
 
+# add 
+add_dependencies(${LIBPROJECT_NAME} ${SHADER_COMPILE_TARGET})
 
 #Set output path
 set_target_properties(${LIBPROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)

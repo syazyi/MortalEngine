@@ -40,6 +40,9 @@ namespace mortal
 
     void RenderingSystem::ClearUpVulkan()
     {
+        for (auto& renderPass : m_RenderPasses) {
+            renderPass.reset();
+        }
         m_Info.command.ClearUp();
         m_Info.swapchain.ClearUp();
         m_Info.device.ClearUp();

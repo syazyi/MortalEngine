@@ -8,7 +8,8 @@ namespace mortal {
 
 		//Get surface detail information
 		if constexpr (Mortal_PlatformID == 1) {
-			vk::Win32SurfaceCreateInfoKHR createInfo({}, GetModuleHandle(nullptr), glfwGetWin32Window(WindowsWindow::GetWindow()));
+			m_windowRef = WindowsWindow::GetWindow();
+			vk::Win32SurfaceCreateInfoKHR createInfo({}, GetModuleHandle(nullptr), glfwGetWin32Window(m_windowRef));
 			m_Surface = instance.createWin32SurfaceKHR(createInfo);
 		}
 	}
@@ -24,12 +25,12 @@ namespace mortal {
 	}
 
 	//call in window when size be change
-	vk::Extent2D RenderingWindow::GetExtent2D(Window* window)
+	vk::Extent2D RenderingWindow::GetExtent2D()
 	{
 		vk::Extent2D extent2D;
 		int width;
 		int height;
-		glfwGetWindowSize(window->GetWindowNativeHandle(), &width, &height);
+		glfwGetWindowSize(m_windowRef, &width, &height);
 
 		extent2D.setWidth(static_cast<uint32_t>(width));
 		extent2D.setHeight(static_cast<uint32_t>(height));

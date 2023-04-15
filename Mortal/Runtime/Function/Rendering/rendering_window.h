@@ -11,10 +11,11 @@ namespace mortal {
 		void SetWindow(vk::Instance& instance);
 		void ClearUp(vk::Instance& instance);
 		[[nodiscard]] vk::SurfaceKHR& GetSurface();
-		[[nodiscard]] vk::Extent2D GetExtent2D(Window* window);
+		[[nodiscard]] vk::Extent2D GetExtent2D();
 	private:
 		vk::SurfaceKHR m_Surface;
 
+		MortalWindowType* m_windowRef;
 	};
 
 

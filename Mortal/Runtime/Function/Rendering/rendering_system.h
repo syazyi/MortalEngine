@@ -15,10 +15,12 @@ namespace mortal
     struct RenderingSystemInfo
     {
         RenderingSystemInfo() = default;
-        RenderingWindow window;
-        RenderingDevice device;
         RenderingSwapChain swapchain;
         RenderCommand command;
+        RenderingDevice device;
+        RenderingWindow window;
+
+        uint8_t CurrentFrame{0};
     };
 
     class MORTAL_API RenderingSystem : public Layer{
