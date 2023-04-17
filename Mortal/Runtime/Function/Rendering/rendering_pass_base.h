@@ -13,7 +13,10 @@ namespace mortal
         virtual void Init() = 0;
         virtual void ClearUp() = 0;
         virtual void Draw() = 0;
+    protected:
         std::vector<char> LoadShader(const std::string& fileName);
+        vk::Buffer CreateBufferExclusive(vk::DeviceSize size, vk::BufferUsageFlags flags);
+        vk::DeviceMemory CreateMemoryAndBind(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags);
     protected:
         RenderingSystemInfo& m_RenderingInfo;
     };

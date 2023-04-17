@@ -30,6 +30,7 @@ namespace mortal
     //physical funciton
         [[nodiscard]] vk::PhysicalDeviceProperties GetPhysicalDevicePropertires();
         [[nodiscard]] vk::PhysicalDeviceFeatures GetPhysicalDeviceFeature();
+        [[nodiscard]] uint32_t FindMemoryIndex(std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags);
         [[nodiscard]] vk::Device& GetDevice();
         [[nodiscard]] vk::PhysicalDevice& GetPhysicalDevice();
         [[nodiscard]] RenderingQueue& GetRenderingQueue();

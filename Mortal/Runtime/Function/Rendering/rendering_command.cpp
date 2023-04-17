@@ -30,10 +30,12 @@ namespace mortal
 
 	void RenderCommand::EndSingleCommand(vk::CommandBuffer& drawCmdBuffer, vk::Queue& queue)
 	{
+		drawCmdBuffer.end();
 		vk::SubmitInfo subInfo({}, {}, drawCmdBuffer, {});
 		queue.submit(subInfo);
 		queue.waitIdle();
-		drawCmdBuffer.end();
+
+		m_DeviceRef->freeCommandBuffers( m_CommandPool, drawCmdBuffer);
 	}
 	std::vector<vk::CommandBuffer>& RenderCommand::GetCommandBuffers()
 	{

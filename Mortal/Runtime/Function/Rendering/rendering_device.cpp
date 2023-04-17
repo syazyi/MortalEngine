@@ -133,6 +133,22 @@ namespace mortal {
         }
     }
 
-//validation layer set
-
+    uint32_t RenderingDevice::FindMemoryIndex(std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags) {
+        vk::PhysicalDeviceMemoryProperties property = m_PhysicalDevice.getMemoryProperties();
+        uint32_t index = 0;
+        for (; index < property.memoryTypeCount; index++) {
+            uint32_t value = 0xFFFFFFFF;
+            for (auto& require : requirements) {
+                value = (require.memoryTypeBits & (1 << index)) & value;
+            }
+            if (value && property.memoryTypes[index].propertyFlags & flags) {
+                return index;
+            }
+        }
+        if (index == property.memoryTypeCount) {
+            MORTAL_LOG_ERROR("Some Buffers don't suitable be allocated in the same memory");
+            throw std::runtime_error("Error");
+        }
+        return UINT32_MAX;
+    }
 }

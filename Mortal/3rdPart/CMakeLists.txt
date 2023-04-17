@@ -15,6 +15,9 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(glfw)
 
+# Set Glm
+add_subdirectory(glm)
+
 # Set Imgui
 include(imgui.cmake)
 set_target_properties(imgui PROPERTIES FOLDER ${3RDPART_FILE_PATH})

@@ -15,6 +15,7 @@ add_library(${LIBPROJECT_NAME} STATIC ${HEADER_FILE} ${SOURCE_FILE})
 target_link_libraries(${LIBPROJECT_NAME} PUBLIC spdlog::spdlog)
 target_link_libraries(${LIBPROJECT_NAME} PUBLIC glfw)
 target_link_libraries(${LIBPROJECT_NAME} PUBLIC imgui)   
+target_link_libraries(${LIBPROJECT_NAME} PUBLIC glm)
 
 #runtime path
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH})

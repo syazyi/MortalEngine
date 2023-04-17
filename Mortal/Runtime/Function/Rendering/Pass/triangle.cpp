@@ -14,6 +14,86 @@ namespace mortal
     void TrianglePass::Init()
     {
         auto& device = m_RenderingInfo.device.GetDevice();
+
+        auto extent2d = m_RenderingInfo.window.GetExtent2D();
+        // Set Buffer and Memory
+        {
+        //Set data
+            Test_Vertices = {
+                //0
+                {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                //1
+                {{0.0f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                //2
+                {{0.5f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                //3
+                {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+            };
+            Test_Indices = {
+                0, 1, 2, 
+                2, 1, 3
+            };
+
+            mvp.Model = glm::mat4(1.0f);
+            mvp.View = glm::lookAt(glm::vec3{ 1.0f, 1.0f, 1.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{0.0f, 0.0f, 1.0f});
+            mvp.Project = glm::perspective(glm::radians(45.f), (float)extent2d.width / (float) extent2d.height, 0.1f, 100.f);
+
+        //set buffer and memory
+            auto vertex_size = sizeof(Vertex) * Test_Vertices.size();
+            auto index_size = sizeof(uint32_t) * Test_Indices.size();
+
+            vk::BufferCreateInfo VertexBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+            m_VertexBuffer = device.createBuffer(VertexBufferCI);
+            
+            vk::BufferCreateInfo IndexBufferCI({}, index_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+            m_IndexBuffer = device.createBuffer(IndexBufferCI);
+
+            m_VertexIndexMemroy = CreateMemoryAndBind(std::vector<vk::Buffer>{ m_VertexBuffer, m_IndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        //stage buffer and copy data
+            {
+                vk::BufferCreateInfo StageBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+                vk::Buffer StageBuffer = device.createBuffer(StageBufferCI);
+
+                auto StageMemory = CreateMemoryAndBind(std::vector<vk::Buffer>{StageBuffer}, 
+                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+                void* data = device.mapMemory(StageMemory, 0, vertex_size);
+                memcpy(data, Test_Vertices.data(), vertex_size);
+                device.unmapMemory(StageMemory);
+
+                vk::CommandBuffer SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
+                vk::BufferCopy vertexBC(0, 0, vertex_size);
+                SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBuffer, vertexBC);
+                //SingleCmdBuffer.fillBuffer(StageBuffer, 0, VK_WHOLE_SIZE, 0);
+                m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+
+                device.freeMemory(StageMemory);
+                device.destroyBuffer(StageBuffer);
+
+            }
+            
+            {
+                vk::BufferCreateInfo StageBufferCI({}, index_size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+                vk::Buffer StageBuffer = device.createBuffer(StageBufferCI);
+
+                auto StageMemory = CreateMemoryAndBind(std::vector<vk::Buffer>{StageBuffer},
+                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+                void* data = device.mapMemory(StageMemory, 0, index_size);
+                memcpy(data, Test_Indices.data(), index_size);
+                device.unmapMemory(StageMemory);
+
+                vk::CommandBuffer SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
+                vk::BufferCopy indexBC(0, 0, index_size);
+                SingleCmdBuffer.copyBuffer(StageBuffer, m_IndexBuffer, indexBC);
+                m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+
+                device.freeMemory(StageMemory);
+                device.destroyBuffer(StageBuffer);
+            }
+        }
+
         //create pipeline layout
         {
             vk::PipelineLayoutCreateInfo createInfo({});
@@ -38,7 +118,6 @@ namespace mortal
             m_RenderPass = device.createRenderPass(renderPassCreateInfo);
         }
 
-        auto extent2d = m_RenderingInfo.window.GetExtent2D();
         //Set Framebuffer
         {
             auto& imageViews = m_RenderingInfo.swapchain.GetSwapChainImageViews();
@@ -73,10 +152,14 @@ namespace mortal
             std::array<vk::PipelineShaderStageCreateInfo, 2> StageCreateInfos{ vertStageCreateInfo, fragStageCreateInfo };
 
             //vertex input state
-            //vk::VertexInputBindingDescription bindDes();
-            //vk::VertexInputAttributeDescription attrDes();
+            vk::VertexInputBindingDescription bindDes(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
 
-            vk::PipelineVertexInputStateCreateInfo vertInputStateInfo({}, {}, {});
+            vk::VertexInputAttributeDescription attrDes_position(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Position));
+            vk::VertexInputAttributeDescription attrDes_color(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color));
+            vk::VertexInputAttributeDescription attrDes_TexCoord(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, TexCoord));
+
+            std::array<vk::VertexInputAttributeDescription, 3> attrDes{ attrDes_position, attrDes_color, attrDes_TexCoord };
+            vk::PipelineVertexInputStateCreateInfo vertInputStateInfo({}, bindDes, attrDes);
 
             //input assembly state
             vk::PipelineInputAssemblyStateCreateInfo inputAssStateInfo({}, vk::PrimitiveTopology::eTriangleList, VK_FALSE);
@@ -88,7 +171,7 @@ namespace mortal
             vk::PipelineViewportStateCreateInfo viewportStateInfo({}, viewport, scissor);
 
             //rasterization state
-            vk::PipelineRasterizationStateCreateInfo rasterStateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f);
+            vk::PipelineRasterizationStateCreateInfo rasterStateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, VK_FALSE, 0.0f, 0.0f, 0.0f, 1.0f);
 
             //multisample state
             vk::PipelineMultisampleStateCreateInfo multiSampleStateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE);
@@ -136,6 +219,10 @@ namespace mortal
             device.destroySemaphore(m_GetImageSemaphores[i]);
         }
 
+        device.freeMemory(m_VertexIndexMemroy);
+        device.destroyBuffer(m_IndexBuffer);
+        device.destroyBuffer(m_VertexBuffer);
+
         device.destroyPipeline(m_Pipeline);
         device.destroyShaderModule(m_FragmentShaderModule);
         device.destroyShaderModule(m_VertexShaderModule);
@@ -179,7 +266,11 @@ namespace mortal
 
             drawCmd.setScissor(0, rect2d);
 
-            drawCmd.draw(3, 1, 0, 0);
+            drawCmd.bindVertexBuffers(0, m_VertexBuffer, {0});
+            drawCmd.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
+
+            drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
+            //drawCmd.draw(Test_Vertices.size(), 1, 0, 0);
 
             drawCmd.endRenderPass();
             drawCmd.end();
