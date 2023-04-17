@@ -9,3 +9,6 @@
 [submodule "Mortal/3rdPart/imgui"]
 	path = Mortal/3rdPart/imgui
 	url = https://github.com/syazyi/imgui.git
+[submodule "Mortal/3rdPart/glm"]
+	path = Mortal/3rdPart/glm
+	url = https://github.com/syazyi/glm.git
