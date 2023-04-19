@@ -4,6 +4,9 @@ set(3RDPART_FILE_PATH "3rdPart")
 set(vulkan_include ${CMAKE_CURRENT_SOURCE_DIR}/VulkanSDK/include)
 set(vulkan_lib ${CMAKE_CURRENT_SOURCE_DIR}/VulkanSDK/lib/vulkan-1.lib)
 
+# Set Stb
+
+
 # Set spdlog
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 add_subdirectory(spdlog)

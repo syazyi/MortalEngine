@@ -27,6 +27,8 @@ namespace mortal
         virtual void ClearUp() override;
         virtual void Draw() override;
     private:
+
+    private:
         vk::PipelineLayout m_PipelineLayout;
         vk::ShaderModule m_VertexShaderModule;
         vk::ShaderModule m_FragmentShaderModule;
@@ -47,6 +49,11 @@ namespace mortal
 
         vk::DeviceMemory m_VertexIndexMemroy;
 
+        //MVP Uniform buffer
+        vk::Buffer m_MVPUniformBuffer;
+        vk::DeviceMemory m_MVPMemory;
+        void* m_MVPData;
+
         //texture image
         vk::Image m_TextureImage;
         vk::DeviceMemory m_TextureMemory;
@@ -55,5 +62,10 @@ namespace mortal
         std::vector<Vertex> Test_Vertices;
         std::vector<uint32_t> Test_Indices;
         UBO mvp;
+
+        //Des
+        vk::DescriptorPool m_DescriptorPool;
+        vk::DescriptorSetLayout m_TriangleDescriptorSetLayout;
+        std::vector<vk::DescriptorSet> m_TriangleDesCriptorSets;
     };
 } // namespace mortal

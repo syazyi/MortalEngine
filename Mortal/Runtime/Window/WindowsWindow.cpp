@@ -34,6 +34,24 @@ namespace mortal{
     {
         glfwPollEvents();
         
+        static float totalTime = 0;
+        static uint32_t updateTimes = 0;
+        updateTimes++;
+
+        static auto lastTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::duration<float>>((currentTime - lastTime)).count();
+        totalTime += duration;
+        if (totalTime >= 1.0f) {
+            auto time = updateTimes / totalTime;
+            totalTime = 0;
+            updateTimes = 0;
+
+            char buffer[32];
+            sprintf(buffer, "Mortal %.2f FPS", time);
+            glfwSetWindowTitle(m_window, buffer);
+        }
+        lastTime = currentTime;
     }
 
     MortalWindowType* WindowsWindow::GetWindowNativeHandle() const

@@ -1,5 +1,8 @@
 #include "rendering_pass_base.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 namespace mortal
 {
 	RenderPassBase::RenderPassBase(RenderingSystemInfo& info) : m_RenderingInfo(info)	
@@ -52,5 +55,17 @@ namespace mortal
             offset += requirements[i].size;
         }
         return memory;
+    }
+
+    RenderPassBase::TextureInfo RenderPassBase::LoadTexture(const std::string& file)
+    {
+
+        TextureInfo Info;
+        Info.data = stbi_load((std::string("../../Asset/Texture/") + file).c_str(), &Info.texWidth, &Info.texHeight, &Info.texChannels, STBI_rgb_alpha);
+        if (!Info.data) {
+            throw std::runtime_error("failed to load texture image!");
+        }
+        Info.dataSize = Info.texWidth * Info.texWidth * 4;
+        return Info;
     }
 } // namespace mortal

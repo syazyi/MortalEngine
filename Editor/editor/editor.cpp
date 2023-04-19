@@ -38,7 +38,7 @@ namespace mortal
     {
         EventDispatcher::GetInstance().Dispatch(e);
         
-        MORTAL_LOG_INFO("{0}", e);
+        //MORTAL_LOG_INFO("{0}", e);
 
         for (auto layer : m_stack) {
             layer->OnEvent(e);
