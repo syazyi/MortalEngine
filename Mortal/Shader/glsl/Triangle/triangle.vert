@@ -12,7 +12,9 @@ layout(location = 2) in vec2 texCoord;
 
 layout(location = 0) out vec3 fragColor;
 
+layout(location = 1) out vec2 TexCoord_Sample;
 void main(){
 	gl_Position = ubo.proj * ubo.view * ubo.model * vec4(position, 1.0);
 	fragColor = color;
+	TexCoord_Sample = texCoord;
 }

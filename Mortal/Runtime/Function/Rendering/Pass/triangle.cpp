@@ -16,6 +16,8 @@ namespace mortal
         auto& device = m_RenderingInfo.device.GetDevice();
 
         auto extent2d = m_RenderingInfo.window.GetExtent2D();
+
+        vk::Format depthFormat;
         // Set Buffer and Memory
         {
         //Set data
@@ -146,6 +148,42 @@ namespace mortal
 
                 device.freeMemory(stageMemory);
                 device.destroyBuffer(stageBuffer);
+
+                vk::ImageViewCreateInfo ivCreateInfo({}, m_TextureImage, vk::ImageViewType::e2D, vk::Format::eR8G8B8A8Srgb,
+                    vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA), 
+                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+                m_TextureImageView = device.createImageView(ivCreateInfo);
+
+                vk::SamplerCreateInfo sCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
+                    vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0.0f, 
+                    VK_TRUE, m_RenderingInfo.device.GetPhysicalDeviceProperties().limits.maxSamplerAnisotropy, 
+                    VK_FALSE, vk::CompareOp::eAlways, 
+                    0.0f, 0.0f, vk::BorderColor::eFloatOpaqueBlack, VK_FALSE);
+                m_TextureSampler = device.createSampler(sCreateInfo);
+            }
+
+            //Set Depth Image
+            {
+                depthFormat = m_RenderingInfo.device.FindSupportFormat(std::vector<vk::Format>{ vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint }, 
+                    vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+                if (depthFormat == vk::Format::eD32Sfloat) {
+                    SupportStencil = false;
+                }
+                vk::ImageCreateInfo depthImageCreateInfo({}, vk::ImageType::e2D, depthFormat, vk::Extent3D(extent2d, 1.0f), 1, 1, vk::SampleCountFlagBits::e1,
+                    vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive);
+                m_DepthImage = device.createImage(depthImageCreateInfo);
+
+                auto requirements = device.getImageMemoryRequirements(m_DepthImage);
+                uint32_t index = m_RenderingInfo.device.FindMemoryIndex(std::vector<vk::MemoryRequirements>{ requirements  },
+                    vk::MemoryPropertyFlagBits::eDeviceLocal);
+                vk::MemoryAllocateInfo depthMemory(requirements.size, index);
+                m_DepthImageMemory = device.allocateMemory(depthMemory);
+                device.bindImageMemory(m_DepthImage, m_DepthImageMemory, 0);
+
+                vk::ImageViewCreateInfo depthIVCreateInfo({}, m_DepthImage, vk::ImageViewType::e2D, depthFormat,
+                    vk::ComponentMapping(), vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
+                m_DepthImageView = device.createImageView(depthIVCreateInfo);
+
             }
 
             //Set DesCriptorSetLayout
@@ -155,6 +193,9 @@ namespace mortal
                 vk::DescriptorSetLayoutBinding Binding_Mvp(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
                 bindings.emplace_back(Binding_Mvp);
 
+                vk::DescriptorSetLayoutBinding Binding_Sampler(1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
+                bindings.emplace_back(Binding_Sampler);
+
                 vk::DescriptorSetLayoutCreateInfo CreateInfo({}, bindings);
                 m_TriangleDescriptorSetLayout =  device.createDescriptorSetLayout(CreateInfo);
             }
@@ -162,7 +203,8 @@ namespace mortal
             //Create descriptor pool
             {
                 std::vector<vk::DescriptorPoolSize> poolSize{
-                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1)
+                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1),
+                    vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1)
                 };
                 vk::DescriptorPoolCreateInfo CreateInfo(vk::DescriptorPoolCreateFlagBits{}, 1, poolSize);
                 m_DescriptorPool = device.createDescriptorPool(CreateInfo);
@@ -182,6 +224,10 @@ namespace mortal
                     vk::DescriptorBufferInfo MVPBufferInfo(m_MVPUniformBuffer, 0, sizeof(UBO));
                     vk::WriteDescriptorSet writeMVP(desCriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, MVPBufferInfo);
                     writeSets.emplace_back(writeMVP);
+
+                    vk::DescriptorImageInfo SampleImageInfo(m_TextureSampler, m_TextureImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+                    vk::WriteDescriptorSet writeSampler(desCriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, SampleImageInfo);
+                    writeSets.emplace_back(writeSampler);
                 }
 
                 device.updateDescriptorSets(writeSets, {});
@@ -198,12 +244,24 @@ namespace mortal
         {
             //About framebuffer description
             auto format = m_RenderingInfo.swapchain.GetSurfaceDetail().SurfaceFormats.format;
+
+            vk::ImageLayout depthLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+            if (SupportStencil) {
+                depthLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            }
+
             vk::AttachmentDescription attachDes({}, format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, 
                 vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
-            std::array<vk::AttachmentDescription, 1> attachDescriptions{ attachDes };
+            vk::AttachmentDescription depthAttachDes({}, depthFormat, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
+                vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, depthLayout);
+            std::array<vk::AttachmentDescription, 2> attachDescriptions{ attachDes, depthAttachDes };
 
+            //subPassDescription
             vk::AttachmentReference colorAttachRef(0, vk::ImageLayout::eColorAttachmentOptimal);
-            vk::SubpassDescription subPassDes({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachRef);
+
+            vk::AttachmentReference depthAttachRef(1, depthLayout);
+
+            vk::SubpassDescription subPassDes({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachRef, {}, &depthAttachRef);
 
             vk::SubpassDependency dependency(VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput,
                 vk::AccessFlagBits::eNone, vk::AccessFlagBits::eColorAttachmentWrite);
@@ -219,7 +277,8 @@ namespace mortal
             m_FrameBuffers.resize(size);
             for (size_t i = 0; i < size; i++) {
                 std::vector<vk::ImageView> imageViewNeeds{ 
-                    imageViews[i]
+                    imageViews[i], 
+                    m_DepthImageView
                 };
                 vk::FramebufferCreateInfo framebufferCreateInfo({}, m_RenderPass, imageViewNeeds, extent2d.width, extent2d.height, 1);
                 m_FrameBuffers[i] = device.createFramebuffer(framebufferCreateInfo);
@@ -271,7 +330,7 @@ namespace mortal
             vk::PipelineMultisampleStateCreateInfo multiSampleStateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE);
 
             //depth stencil state
-            vk::PipelineDepthStencilStateCreateInfo depthStencilStateInfo({}, VK_FALSE, VK_FALSE);
+            vk::PipelineDepthStencilStateCreateInfo depthStencilStateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE);
 
             //color blend state
             vk::PipelineColorBlendAttachmentState colorBlendAttaState(VK_FALSE, vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd, 
@@ -315,10 +374,17 @@ namespace mortal
             device.destroySemaphore(m_GetImageSemaphores[i]);
         }
 
-        //device.freeDescriptorSets(m_DescriptorPool, m_TriangleDesCriptorSets);
+
         device.destroyDescriptorPool(m_DescriptorPool);
         device.destroyDescriptorSetLayout(m_TriangleDescriptorSetLayout);
+        
+        device.destroyImageView(m_DepthImageView);
+        device.freeMemory(m_DepthImageMemory);
+        device.destroyImage(m_DepthImage);
 
+        device.destroySampler(m_TextureSampler);
+
+        device.destroyImageView(m_TextureImageView);
         device.freeMemory(m_TextureMemory);
         device.destroyImage(m_TextureImage);
 
@@ -360,11 +426,16 @@ namespace mortal
             drawCmd.begin(beginInfo);
 
             vk::Rect2D rect2d({}, m_RenderingInfo.window.GetExtent2D());
+
             vk::ClearValue clearValue;
-            clearValue.setDepthStencil(vk::ClearDepthStencilValue(1.0f, 0));
             std::array<float, 4> clearColorValueBlack{ 0.0f, 0.0f, 0.0f, 1.0f };
             clearValue.setColor(vk::ClearColorValue(clearColorValueBlack));
-            vk::RenderPassBeginInfo RPBeginInfo(m_RenderPass, m_FrameBuffers[nextImageIndex], rect2d, clearValue);
+            vk::ClearValue clearDepthValue;
+            clearDepthValue.setDepthStencil(vk::ClearDepthStencilValue(1.0f, 0));
+
+            std::array<vk::ClearValue, 2> clearValues{ clearValue, clearDepthValue };
+
+            vk::RenderPassBeginInfo RPBeginInfo(m_RenderPass, m_FrameBuffers[nextImageIndex], rect2d, clearValues);
             drawCmd.beginRenderPass(RPBeginInfo, vk::SubpassContents::eInline);
             drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_Pipeline);
 

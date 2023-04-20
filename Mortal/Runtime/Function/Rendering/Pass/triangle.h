@@ -58,6 +58,16 @@ namespace mortal
         vk::Image m_TextureImage;
         vk::DeviceMemory m_TextureMemory;
 
+        vk::ImageView m_TextureImageView;
+
+        vk::Sampler m_TextureSampler;
+
+        //Depth Image
+        vk::Image m_DepthImage;
+        vk::DeviceMemory m_DepthImageMemory;
+        vk::ImageView m_DepthImageView;
+        bool SupportStencil{ true };
+
         //data
         std::vector<Vertex> Test_Vertices;
         std::vector<uint32_t> Test_Indices;

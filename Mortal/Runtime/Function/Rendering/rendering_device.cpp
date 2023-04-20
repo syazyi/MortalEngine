@@ -84,9 +84,14 @@ namespace mortal {
     }
 
 //physical device
-    vk::PhysicalDeviceProperties RenderingDevice::GetPhysicalDevicePropertires()
+    vk::PhysicalDeviceProperties RenderingDevice::GetPhysicalDeviceProperties()
     {
         return m_PhysicalDevice.getProperties();
+    }
+
+    vk::FormatProperties RenderingDevice::GetPhysicalDeviceFormatProperties(vk::Format format)
+    {
+        return m_PhysicalDevice.getFormatProperties(format);
     }
 
     vk::PhysicalDeviceFeatures RenderingDevice::GetPhysicalDeviceFeature()
@@ -108,6 +113,29 @@ namespace mortal {
     RenderingQueue& RenderingDevice::GetRenderingQueue()
     {
         return m_Queues;
+    }
+
+    vk::Format RenderingDevice::FindSupportFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features)
+    {
+        for (auto& format : formats) {
+            auto formatPro =  GetPhysicalDeviceFormatProperties(format);
+            switch (imageTiling)
+            {
+            case vk::ImageTiling::eOptimal:
+                if ((formatPro.optimalTilingFeatures & features) == features) {
+                    return format;
+                }
+                break;
+            case vk::ImageTiling::eLinear:
+                if ((formatPro.linearTilingFeatures & features) == features) {
+                    return format;
+                }
+                break;
+            case vk::ImageTiling::eDrmFormatModifierEXT:
+                break;
+            }
+            throw "Error";
+        }
     }
 
     void RenderingDevice::ChooseSuitablePhysicalDevice(vk::Instance& instance)

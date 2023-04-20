@@ -28,13 +28,15 @@ namespace mortal
 
         vk::PhysicalDeviceFeatures EnablePhysicalFeature();
     //physical funciton
-        [[nodiscard]] vk::PhysicalDeviceProperties GetPhysicalDevicePropertires();
+        [[nodiscard]] vk::PhysicalDeviceProperties GetPhysicalDeviceProperties();
+        [[nodiscard]] vk::FormatProperties GetPhysicalDeviceFormatProperties(vk::Format format);
         [[nodiscard]] vk::PhysicalDeviceFeatures GetPhysicalDeviceFeature();
         [[nodiscard]] uint32_t FindMemoryIndex(std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags);
         [[nodiscard]] vk::Device& GetDevice();
         [[nodiscard]] vk::PhysicalDevice& GetPhysicalDevice();
         [[nodiscard]] RenderingQueue& GetRenderingQueue();
 
+        vk::Format FindSupportFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features);
     private:
         void ChooseSuitablePhysicalDevice(vk::Instance& instance);
     private:
