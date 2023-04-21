@@ -30,6 +30,9 @@ target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Function)
 #add stb path
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/stb)
 
+#add tinyobjloader path
+target_include_directories(${LIBPROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/tiny_obj_load)
+
 # add 
 add_dependencies(${LIBPROJECT_NAME} ${SHADER_COMPILE_TARGET})
 

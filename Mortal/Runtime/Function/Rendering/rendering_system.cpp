@@ -66,13 +66,17 @@ namespace mortal
 
             m_Instance = vk::createInstance(createInfo);
 
-            SetDebugCallBack();
+            if constexpr (EnableValidtion) {
+                SetDebugCallBack();
+            }
         }
     }
 
     void RenderingSystem::DestroyInstance()
     {
-        GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", callback, nullptr);
+        if constexpr (EnableValidtion) {
+            GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", callback, nullptr);
+        }
         m_Instance.destroy();
     }
 

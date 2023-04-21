@@ -31,6 +31,18 @@ namespace mortal
                 //3
                 {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
             };
+
+            Test_Vertices_Second = {
+                //0
+                {{0.0f, 0.0f, 0.3f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                //1
+                {{0.0f, 0.5f, 0.3f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                //2
+                {{0.5f, 0.0f, 0.3f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                //3
+                {{0.5f, 0.5f, 0.3f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+            };
+
             Test_Indices = {
                 0, 2, 1, 
                 2, 3, 1
@@ -49,17 +61,22 @@ namespace mortal
             vk::BufferCreateInfo VertexBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
             m_VertexBuffer = device.createBuffer(VertexBufferCI);
             
+            //add Second Triangle
+            vk::BufferCreateInfo VertexBufferSecondCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+            m_VertexBufferSecond = device.createBuffer(VertexBufferSecondCI);
+
             vk::BufferCreateInfo IndexBufferCI({}, index_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
             m_IndexBuffer = device.createBuffer(IndexBufferCI);
 
-            m_VertexIndexMemroy = CreateMemoryAndBind(std::vector<vk::Buffer>{ m_VertexBuffer, m_IndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+            m_VertexIndexMemroy = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBuffer, m_IndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+            m_VertexSecondMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBufferSecond }, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
             //Set UniformBuffer
             auto mvp_size = sizeof(mvp);
             vk::BufferCreateInfo createInfo({}, mvp_size, vk::BufferUsageFlagBits::eUniformBuffer, vk::SharingMode::eExclusive);
             m_MVPUniformBuffer = device.createBuffer(createInfo);
 
-            m_MVPMemory = CreateMemoryAndBind(std::vector<vk::Buffer>{ m_MVPUniformBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+            m_MVPMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_MVPUniformBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
             m_MVPData = device.mapMemory(m_MVPMemory, 0, mvp_size);
 
         //stage buffer and copy data
@@ -68,7 +85,7 @@ namespace mortal
                 vk::BufferCreateInfo StageBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
                 vk::Buffer StageBuffer = device.createBuffer(StageBufferCI);
 
-                auto StageMemory = CreateMemoryAndBind(std::vector<vk::Buffer>{StageBuffer}, 
+                auto StageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{StageBuffer},
                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
                 void* data = device.mapMemory(StageMemory, 0, vertex_size);
@@ -78,6 +95,14 @@ namespace mortal
                 vk::CommandBuffer SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
                 vk::BufferCopy vertexBC(0, 0, vertex_size);
                 SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBuffer, vertexBC);
+                m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+
+                data = device.mapMemory(StageMemory, 0, vertex_size);
+                memcpy(data, Test_Vertices_Second.data(), vertex_size);
+                device.unmapMemory(StageMemory);
+
+                SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
+                SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBufferSecond, vertexBC);
                 m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
 
                 device.freeMemory(StageMemory);
@@ -90,7 +115,7 @@ namespace mortal
                 vk::BufferCreateInfo StageBufferCI({}, index_size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
                 vk::Buffer StageBuffer = device.createBuffer(StageBufferCI);
 
-                auto StageMemory = CreateMemoryAndBind(std::vector<vk::Buffer>{StageBuffer},
+                auto StageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{StageBuffer},
                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
                 void* data = device.mapMemory(StageMemory, 0, index_size);
@@ -112,19 +137,13 @@ namespace mortal
                     vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive, {},
                     vk::ImageLayout::eUndefined);
                 m_TextureImage = device.createImage(createInfo);
-
-                vk::MemoryRequirements requires;
-                requires = device.getImageMemoryRequirements(m_TextureImage);
-
-                uint32_t index = m_RenderingInfo.device.FindMemoryIndex(std::vector<vk::MemoryRequirements>{requires}, vk::MemoryPropertyFlagBits::eDeviceLocal);
-                vk::MemoryAllocateInfo ImageAllocateInfo(requires.size, index);
-                m_TextureMemory = device.allocateMemory(ImageAllocateInfo);
-                device.bindImageMemory(m_TextureImage, m_TextureMemory, 0);
+                
+                m_TextureMemory = CreateMemoryAndBind_Image(m_TextureImage, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
                 vk::BufferCreateInfo StagebufferInfo({}, textureInfo.dataSize, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
                 auto stageBuffer = device.createBuffer(StagebufferInfo);
 
-                auto stageMemory = CreateMemoryAndBind(std::vector<vk::Buffer>{ stageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+                auto stageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ stageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
                 void* textureData = device.mapMemory(stageMemory, 0, textureInfo.dataSize);
                 memcpy(textureData, textureInfo.data, textureInfo.dataSize);
                 device.unmapMemory(stageMemory);
@@ -173,12 +192,7 @@ namespace mortal
                     vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive);
                 m_DepthImage = device.createImage(depthImageCreateInfo);
 
-                auto requirements = device.getImageMemoryRequirements(m_DepthImage);
-                uint32_t index = m_RenderingInfo.device.FindMemoryIndex(std::vector<vk::MemoryRequirements>{ requirements  },
-                    vk::MemoryPropertyFlagBits::eDeviceLocal);
-                vk::MemoryAllocateInfo depthMemory(requirements.size, index);
-                m_DepthImageMemory = device.allocateMemory(depthMemory);
-                device.bindImageMemory(m_DepthImage, m_DepthImageMemory, 0);
+                m_DepthImageMemory = CreateMemoryAndBind_Image(m_DepthImage, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
                 vk::ImageViewCreateInfo depthIVCreateInfo({}, m_DepthImage, vk::ImageViewType::e2D, depthFormat,
                     vk::ComponentMapping(), vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
@@ -392,6 +406,9 @@ namespace mortal
         device.freeMemory(m_MVPMemory);
         device.destroyBuffer(m_MVPUniformBuffer);
 
+        device.freeMemory(m_VertexSecondMemory);
+        device.destroyBuffer(m_VertexBufferSecond);
+
         device.freeMemory(m_VertexIndexMemroy);
         device.destroyBuffer(m_IndexBuffer);
         device.destroyBuffer(m_VertexBuffer);
@@ -445,13 +462,13 @@ namespace mortal
             drawCmd.setScissor(0, rect2d);
 
             drawCmd.bindVertexBuffers(0, m_VertexBuffer, {0});
-
             drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout, 0, m_TriangleDesCriptorSets, {});
-
             drawCmd.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
 
             drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
-            //drawCmd.draw(Test_Vertices.size(), 1, 0, 0);
+            
+            drawCmd.bindVertexBuffers(0, m_VertexBufferSecond, {0});
+            drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
 
             drawCmd.endRenderPass();
             drawCmd.end();

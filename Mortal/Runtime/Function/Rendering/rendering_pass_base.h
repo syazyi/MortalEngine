@@ -2,9 +2,26 @@
 #include <string>
 #include "rendering.h"
 #include "rendering_system.h"
+#include "Math/Vertex.h"
 namespace mortal
 {
     struct RenderingSystemInfo;
+
+    struct TextureInfo
+    {
+        int texWidth;
+        int texHeight;
+        int texChannels;
+        vk::DeviceSize dataSize;
+        unsigned char* data{ nullptr };
+    };
+
+    struct LoadedModelInfo
+    {
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indeices;
+    };
+
     class RenderPassBase {
     public:
         RenderPassBase(RenderingSystemInfo& info);
@@ -14,19 +31,13 @@ namespace mortal
         virtual void ClearUp() = 0;
         virtual void Draw() = 0;
     protected:
-        struct TextureInfo
-        {
-            int texWidth;
-            int texHeight;
-            int texChannels;
-            vk::DeviceSize dataSize;
-            unsigned char* data{ nullptr };
-        };
-
         std::vector<char> LoadShader(const std::string& fileName);
-        vk::Buffer CreateBufferExclusive(vk::DeviceSize size, vk::BufferUsageFlags flags);
-        vk::DeviceMemory CreateMemoryAndBind(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags);
         TextureInfo LoadTexture(const std::string& file);
+        LoadedModelInfo LoadObjModel(const std::string& file);
+        vk::Buffer CreateBufferExclusive(vk::DeviceSize size, vk::BufferUsageFlags flags);
+        vk::DeviceMemory CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags);
+        vk::Image CreateImageExclusive();
+        vk::DeviceMemory CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags);
     protected:
         RenderingSystemInfo& m_RenderingInfo;
     };

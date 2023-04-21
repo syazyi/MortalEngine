@@ -3,6 +3,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 namespace mortal
 {
 	RenderPassBase::RenderPassBase(RenderingSystemInfo& info) : m_RenderingInfo(info)	
@@ -36,7 +39,7 @@ namespace mortal
         return m_RenderingInfo.device.GetDevice().createBuffer(createInfo);
     }
 
-    vk::DeviceMemory RenderPassBase::CreateMemoryAndBind(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags)
+    vk::DeviceMemory RenderPassBase::CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags)
     {
         auto bufferCount = buffers.size();
         auto device = m_RenderingInfo.device.GetDevice();
@@ -57,9 +60,26 @@ namespace mortal
         return memory;
     }
 
-    RenderPassBase::TextureInfo RenderPassBase::LoadTexture(const std::string& file)
+    vk::Image RenderPassBase::CreateImageExclusive()
     {
+        return vk::Image();
+    }
 
+    vk::DeviceMemory RenderPassBase::CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags)
+    {
+        auto device = m_RenderingInfo.device.GetDevice();
+        vk::MemoryRequirements requires;
+        requires = device.getImageMemoryRequirements(image);
+
+        uint32_t index = m_RenderingInfo.device.FindMemoryIndex(std::vector<vk::MemoryRequirements>{requires}, flags);
+        vk::MemoryAllocateInfo ImageAllocateInfo(requires.size, index);
+        vk::DeviceMemory ImageMemory = device.allocateMemory(ImageAllocateInfo);
+        device.bindImageMemory(image, ImageMemory, 0);
+        return ImageMemory;
+    }
+
+    TextureInfo RenderPassBase::LoadTexture(const std::string& file)
+    {
         TextureInfo Info;
         Info.data = stbi_load((std::string("../../Asset/Texture/") + file).c_str(), &Info.texWidth, &Info.texHeight, &Info.texChannels, STBI_rgb_alpha);
         if (!Info.data) {
@@ -67,5 +87,47 @@ namespace mortal
         }
         Info.dataSize = Info.texWidth * Info.texWidth * 4;
         return Info;
+    }
+
+    LoadedModelInfo RenderPassBase::LoadObjModel(const std::string& file)
+    {
+        LoadedModelInfo info;
+
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+
+        std::string warn, err;
+
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, file.c_str())) {
+            throw std::runtime_error(warn + err);
+        }
+
+        auto verteiesSize = attrib.vertices.size() / 3;
+        info.vertices.resize(verteiesSize);
+        std::unordered_map<Vertex, uint32_t> ver_tex_indeies;
+        for (const auto& shape : shapes) {
+            for (const auto& index : shape.mesh.indices) {
+                Vertex vertex{};
+                vertex.Position = {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+                };
+
+                vertex.TexCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+                vertex.Color = { 1.0f, 1.0f, 1.0f };
+                if (ver_tex_indeies.count(vertex) == 0) {
+                    ver_tex_indeies[vertex] = info.vertices.size();
+                    info.vertices.push_back(vertex);
+                }
+
+                info.indeices.push_back(ver_tex_indeies[vertex]);
+            }
+        }
+        return info;
     }
 } // namespace mortal

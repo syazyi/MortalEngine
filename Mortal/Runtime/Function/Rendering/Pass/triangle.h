@@ -1,18 +1,9 @@
 #pragma once
 #include "Rendering/rendering_pass_base.h"
-#include "glm/vec3.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 namespace mortal
 {
     class TrianglePass : public RenderPassBase {
     public:
-        struct Vertex
-        {
-            glm::vec3 Position;
-            glm::vec3 Color;
-            glm::vec2 TexCoord;
-        };
-
         struct UBO
         {
             glm::mat4 Model;
@@ -49,6 +40,8 @@ namespace mortal
 
         vk::DeviceMemory m_VertexIndexMemroy;
 
+        vk::Buffer m_VertexBufferSecond;
+        vk::DeviceMemory m_VertexSecondMemory;
         //MVP Uniform buffer
         vk::Buffer m_MVPUniformBuffer;
         vk::DeviceMemory m_MVPMemory;
@@ -70,6 +63,7 @@ namespace mortal
 
         //data
         std::vector<Vertex> Test_Vertices;
+        std::vector<Vertex> Test_Vertices_Second;
         std::vector<uint32_t> Test_Indices;
         UBO mvp;
 
