@@ -1,4 +1,4 @@
-#include "rendering_pass_base.h"
+#include "rendering_part_base.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -8,12 +8,12 @@
 
 namespace mortal
 {
-	RenderPassBase::RenderPassBase(RenderingSystemInfo& info) : m_RenderingInfo(info)	
+	RenderPartBase::RenderPartBase(RenderingSystemInfo& info) : m_RenderingInfo(info)	
 	{
 
 	}
 
-    std::vector<char> RenderPassBase::LoadShader(const std::string& fileName)
+    std::vector<char> RenderPartBase::LoadShader(const std::string& fileName)
 	{
         auto filePath = "../../Mortal/Shader/generated/spv/" + fileName + ".spv";
         std::ifstream file(filePath, std::ios::ate | std::ios::binary);
@@ -33,13 +33,13 @@ namespace mortal
         return buffer;
 	}
 
-    vk::Buffer RenderPassBase::CreateBufferExclusive(vk::DeviceSize size, vk::BufferUsageFlags flags)
+    vk::Buffer RenderPartBase::CreateBufferExclusive(vk::DeviceSize size, vk::BufferUsageFlags flags)
     {
         vk::BufferCreateInfo createInfo({}, size, flags, vk::SharingMode::eExclusive);
         return m_RenderingInfo.device.GetDevice().createBuffer(createInfo);
     }
 
-    vk::DeviceMemory RenderPassBase::CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags)
+    vk::DeviceMemory RenderPartBase::CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags)
     {
         auto bufferCount = buffers.size();
         auto device = m_RenderingInfo.device.GetDevice();
@@ -60,12 +60,12 @@ namespace mortal
         return memory;
     }
 
-    vk::Image RenderPassBase::CreateImageExclusive()
+    vk::Image RenderPartBase::CreateImageExclusive()
     {
         return vk::Image();
     }
 
-    vk::DeviceMemory RenderPassBase::CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags)
+    vk::DeviceMemory RenderPartBase::CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags)
     {
         auto device = m_RenderingInfo.device.GetDevice();
         vk::MemoryRequirements requires;
@@ -78,7 +78,7 @@ namespace mortal
         return ImageMemory;
     }
 
-    TextureInfo RenderPassBase::LoadTexture(const std::string& file)
+    TextureInfo RenderPartBase::LoadTexture(const std::string& file)
     {
         TextureInfo Info;
         Info.data = stbi_load((std::string("../../Asset/Texture/") + file).c_str(), &Info.texWidth, &Info.texHeight, &Info.texChannels, STBI_rgb_alpha);
@@ -89,7 +89,7 @@ namespace mortal
         return Info;
     }
 
-    LoadedModelInfo RenderPassBase::LoadObjModel(const std::string& file)
+    LoadedModelInfo RenderPartBase::LoadObjModel(const std::string& file)
     {
         LoadedModelInfo info;
 
@@ -104,7 +104,7 @@ namespace mortal
         }
 
         auto verteiesSize = attrib.vertices.size() / 3;
-        info.vertices.resize(verteiesSize);
+        info.vertices.reserve(verteiesSize);
         std::unordered_map<Vertex, uint32_t> ver_tex_indeies;
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
@@ -115,11 +115,19 @@ namespace mortal
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
 
+                vertex.Color = { 1.0f, 1.0f, 1.0f };
+
+                vertex.Normal = {
+                    attrib.normals[3 * index.normal_index +0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2]
+                };
+
                 vertex.TexCoord = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
                     1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
                 };
-                vertex.Color = { 1.0f, 1.0f, 1.0f };
+
                 if (ver_tex_indeies.count(vertex) == 0) {
                     ver_tex_indeies[vertex] = info.vertices.size();
                     info.vertices.push_back(vertex);

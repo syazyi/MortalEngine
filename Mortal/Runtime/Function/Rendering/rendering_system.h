@@ -11,7 +11,7 @@
 #include "rendering_command.h"
 namespace mortal
 {
-    class RenderPassBase;
+    class RenderPartBase;
     struct RenderingSystemInfo
     {
         RenderingSystemInfo() = default;
@@ -21,6 +21,11 @@ namespace mortal
         RenderingWindow window;
 
         uint8_t CurrentFrame{0};
+        uint32_t nextImageIndex;
+
+        std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
+        std::array<vk::Semaphore, MaxFrameInFlight> m_PresentSemaphores;
+        std::array<vk::Fence, MaxFrameInFlight> m_FrameFences;
     };
 
     class MORTAL_API RenderingSystem : public Layer{
@@ -44,9 +49,9 @@ namespace mortal
         virtual void OnUpdate() override;
         virtual void OnEvent(Event& e) override;
 
-        template<typename T, typename = std::enable_if_t<std::is_base_of_v<RenderPassBase, T>>>
-        void AddRenderPass(T* pass) {
-            m_RenderPasses.push_back(std::unique_ptr<T>(pass));
+        template<typename T, typename = std::enable_if_t<std::is_base_of_v<RenderPartBase, T>>>
+        void AddRenderPart(T* part) {
+            m_RenderParts.push_back(std::unique_ptr<T>(part));
         }
 
     private:
@@ -89,7 +94,9 @@ namespace mortal
         VkDebugUtilsMessengerEXT callback;
         RenderingSystemInfo m_Info;
 
-        std::vector<std::unique_ptr<RenderPassBase>> m_RenderPasses;
+        std::vector<std::unique_ptr<RenderPartBase>> m_RenderParts;
+
+        //Draw info
     };
 
 

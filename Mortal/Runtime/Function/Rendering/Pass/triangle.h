@@ -1,8 +1,8 @@
 #pragma once
-#include "Rendering/rendering_pass_base.h"
+#include "Rendering/rendering_part_base.h"
 namespace mortal
 {
-    class TrianglePass : public RenderPassBase {
+    class TrianglePart : public RenderPartBase {
     public:
         struct UBO
         {
@@ -11,8 +11,8 @@ namespace mortal
             glm::mat4 Project;
         };
     public:
-        explicit TrianglePass(RenderingSystemInfo& info);
-        ~TrianglePass();
+        explicit TrianglePart(RenderingSystemInfo& info);
+        ~TrianglePart();
 
         virtual void Init() override;
         virtual void ClearUp() override;
@@ -27,12 +27,6 @@ namespace mortal
 
         vk::RenderPass m_RenderPass;
         std::vector<vk::Framebuffer> m_FrameBuffers;
-
-        std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
-        std::array<vk::Semaphore, MaxFrameInFlight> m_PresentSemaphores;
-        std::array<vk::Fence, MaxFrameInFlight> m_FrameFences;
-
-        std::vector<vk::CommandBuffer> m_DrawCmds;
 
         //vertex buffer
         vk::Buffer m_VertexBuffer;

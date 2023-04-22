@@ -2,16 +2,16 @@
 
 namespace mortal
 {
-    TrianglePass::TrianglePass(RenderingSystemInfo& info) : RenderPassBase(info)
+    TrianglePart::TrianglePart(RenderingSystemInfo& info) : RenderPartBase(info)
     {
         Init();
     }
-    TrianglePass::~TrianglePass()
+    TrianglePart::~TrianglePart()
     {
         ClearUp();
     }
 
-    void TrianglePass::Init()
+    void TrianglePart::Init()
     {
         auto& device = m_RenderingInfo.device.GetDevice();
 
@@ -21,35 +21,14 @@ namespace mortal
         // Set Buffer and Memory
         {
         //Set data
-            Test_Vertices = {
-                //0
-                {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                //1
-                {{0.0f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                //2
-                {{0.5f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                //3
-                {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-            };
+            //auto ObjInfo = LoadObjModel("../../Asset/Model/frog.obj");
+            auto ObjInfo = LoadObjModel("../../Asset/Model/Sphere.obj");
 
-            Test_Vertices_Second = {
-                //0
-                {{0.0f, 0.0f, 0.3f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                //1
-                {{0.0f, 0.5f, 0.3f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                //2
-                {{0.5f, 0.0f, 0.3f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                //3
-                {{0.5f, 0.5f, 0.3f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-            };
-
-            Test_Indices = {
-                0, 2, 1, 
-                2, 3, 1
-            };
+            Test_Vertices = ObjInfo.vertices;
+            Test_Indices = ObjInfo.indeices;
 
             mvp.Model = glm::mat4(1.0f);
-            mvp.View = glm::lookAt(glm::vec3{ 2.0f, 2.0f, 2.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{0.0f, 0.0f, 1.0f});
+            mvp.View = glm::lookAt(glm::vec3{ 5.0f, 5.0f, 5.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{0.0f, 0.0f, 1.0f});
             mvp.Project = glm::perspective(glm::radians(45.f), (float)extent2d.width / (float) extent2d.height, 0.1f, 100.f);
             mvp.Project[1][1] *= -1;
 
@@ -61,15 +40,16 @@ namespace mortal
             vk::BufferCreateInfo VertexBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
             m_VertexBuffer = device.createBuffer(VertexBufferCI);
             
-            //add Second Triangle
-            vk::BufferCreateInfo VertexBufferSecondCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
-            m_VertexBufferSecond = device.createBuffer(VertexBufferSecondCI);
-
             vk::BufferCreateInfo IndexBufferCI({}, index_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
             m_IndexBuffer = device.createBuffer(IndexBufferCI);
 
             m_VertexIndexMemroy = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBuffer, m_IndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
-            m_VertexSecondMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBufferSecond }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+            
+            //add Second Triangle
+            //vk::BufferCreateInfo VertexBufferSecondCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+            //m_VertexBufferSecond = device.createBuffer(VertexBufferSecondCI);
+
+            //m_VertexSecondMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBufferSecond }, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
             //Set UniformBuffer
             auto mvp_size = sizeof(mvp);
@@ -97,13 +77,15 @@ namespace mortal
                 SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBuffer, vertexBC);
                 m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
 
-                data = device.mapMemory(StageMemory, 0, vertex_size);
-                memcpy(data, Test_Vertices_Second.data(), vertex_size);
-                device.unmapMemory(StageMemory);
 
-                SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
-                SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBufferSecond, vertexBC);
-                m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+                //Second
+                //data = device.mapMemory(StageMemory, 0, vertex_size);
+                //memcpy(data, Test_Vertices_Second.data(), vertex_size);
+                //device.unmapMemory(StageMemory);
+
+                //SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
+                //SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBufferSecond, vertexBC);
+                //m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
 
                 device.freeMemory(StageMemory);
                 device.destroyBuffer(StageBuffer);
@@ -324,8 +306,9 @@ namespace mortal
             vk::VertexInputAttributeDescription attrDes_position(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Position));
             vk::VertexInputAttributeDescription attrDes_color(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color));
             vk::VertexInputAttributeDescription attrDes_TexCoord(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, TexCoord));
+            vk::VertexInputAttributeDescription attrDes_normal(3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Normal));
 
-            std::array<vk::VertexInputAttributeDescription, 3> attrDes{ attrDes_position, attrDes_color, attrDes_TexCoord };
+            std::array<vk::VertexInputAttributeDescription, 4> attrDes{ attrDes_position, attrDes_color, attrDes_TexCoord, attrDes_normal };
             vk::PipelineVertexInputStateCreateInfo vertInputStateInfo({}, bindDes, attrDes);
 
             //input assembly state
@@ -361,33 +344,12 @@ namespace mortal
             auto result_pipeline = device.createGraphicsPipeline(nullptr, pipelineCreateInfo);
             m_Pipeline = result_pipeline.value;
         }
-
-        //create semaphore and fence
-        {
-            vk::SemaphoreCreateInfo createInfo{};
-            vk::FenceCreateInfo fCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-            for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
-                m_GetImageSemaphores[i] = device.createSemaphore(createInfo);
-                m_PresentSemaphores[i] = device.createSemaphore(createInfo);
-                m_FrameFences[i] = device.createFence(fCreateInfo);
-            }
-        }
-
-        m_DrawCmds = m_RenderingInfo.command.GetCommandBuffers();
     }
 
-    void TrianglePass::ClearUp()
+    void TrianglePart::ClearUp()
     {
         auto& device = m_RenderingInfo.device.GetDevice();
         device.waitIdle();
-
-
-        for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
-            device.destroyFence(m_FrameFences[i]);
-            device.destroySemaphore(m_PresentSemaphores[i]);
-            device.destroySemaphore(m_GetImageSemaphores[i]);
-        }
-
 
         device.destroyDescriptorPool(m_DescriptorPool);
         device.destroyDescriptorSetLayout(m_TriangleDescriptorSetLayout);
@@ -423,22 +385,12 @@ namespace mortal
         device.destroyPipelineLayout(m_PipelineLayout);
     }
 
-    void mortal::TrianglePass::Draw()
+    void mortal::TrianglePart::Draw()
     {
-        auto& device = m_RenderingInfo.device.GetDevice();
-        auto& currentFrame = m_RenderingInfo.CurrentFrame;
-        auto result_waitFence = device.waitForFences(m_FrameFences[currentFrame],VK_TRUE, UINT64_MAX);
 
-        auto& swapchain = m_RenderingInfo.swapchain.GetSwapChain();
-        auto result_nextImageIndex = device.acquireNextImageKHR(swapchain, UINT64_MAX, m_GetImageSemaphores[currentFrame]);
-        auto nextImageIndex = result_nextImageIndex.value;
-
-        device.resetFences(m_FrameFences[currentFrame]);
-
-        auto& drawCmd = m_DrawCmds[currentFrame];
-        drawCmd.reset();
         //Record Draw Cmd
         {
+            auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
             vk::CommandBufferBeginInfo beginInfo{};
             drawCmd.begin(beginInfo);
 
@@ -452,7 +404,7 @@ namespace mortal
 
             std::array<vk::ClearValue, 2> clearValues{ clearValue, clearDepthValue };
 
-            vk::RenderPassBeginInfo RPBeginInfo(m_RenderPass, m_FrameBuffers[nextImageIndex], rect2d, clearValues);
+            vk::RenderPassBeginInfo RPBeginInfo(m_RenderPass, m_FrameBuffers[m_RenderingInfo.nextImageIndex], rect2d, clearValues);
             drawCmd.beginRenderPass(RPBeginInfo, vk::SubpassContents::eInline);
             drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_Pipeline);
 
@@ -467,32 +419,22 @@ namespace mortal
 
             drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
             
-            drawCmd.bindVertexBuffers(0, m_VertexBufferSecond, {0});
-            drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
+            //drawCmd.bindVertexBuffers(0, m_VertexBufferSecond, {0});
+            //drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
 
             drawCmd.endRenderPass();
             drawCmd.end();
         }
-
-        auto& drawQueue = m_RenderingInfo.device.GetRenderingQueue().PresentQueue.value();
 
         //Updata MVP
         {
             static auto start = std::chrono::high_resolution_clock::now();
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
-            mvp.Model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+            mvp.Model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f)) * 
+                glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             memcpy(m_MVPData, &mvp, sizeof(mvp));
         }
-
-        std::array<vk::PipelineStageFlags, 1> pipelineStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
-        vk::SubmitInfo subInfo(m_GetImageSemaphores[currentFrame], pipelineStages, drawCmd, m_PresentSemaphores[currentFrame]);
-        drawQueue.submit(subInfo, m_FrameFences[currentFrame]);
-
-        vk::PresentInfoKHR presentInfo(m_PresentSemaphores[currentFrame], swapchain, nextImageIndex);
-        auto result_present = drawQueue.presentKHR(presentInfo);
-
-        currentFrame = (currentFrame + 1) % MaxFrameInFlight;
     }
 
 } // namespace mortal

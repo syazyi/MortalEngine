@@ -2,15 +2,41 @@
 #include "Rendering/rendering_device.h"
 #include "Window/WindowsWindow.h"
 
-#include "rendering_pass_base.h"
+#include "rendering_part_base.h"
 #include "Rendering/Pass/triangle.h"
 namespace mortal
 {
     void RenderingSystem::OnUpdate()
     {
-        for (auto& pass : m_RenderPasses) {
+        auto& device = m_Info.device.GetDevice();
+        auto& currentFrame = m_Info.CurrentFrame;
+        auto result_waitFence = device.waitForFences(m_Info.m_FrameFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+        auto& swapchain = m_Info.swapchain.GetSwapChain();
+        auto result_nextImageIndex = device.acquireNextImageKHR(swapchain, UINT64_MAX, m_Info.m_GetImageSemaphores[currentFrame]);
+        m_Info.nextImageIndex = result_nextImageIndex.value;
+
+        device.resetFences(m_Info.m_FrameFences[currentFrame]);
+
+        auto& drawCmd = m_Info.command.GetCommandBuffers()[currentFrame];
+        drawCmd.reset();
+
+
+        for (auto& pass : m_RenderParts) {
             pass->Draw();
         }
+
+        auto& drawQueue = m_Info.device.GetRenderingQueue().PresentQueue.value();
+
+        std::array<vk::PipelineStageFlags, 1> pipelineStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+        vk::SubmitInfo subInfo(m_Info.m_GetImageSemaphores[currentFrame], pipelineStages, drawCmd, m_Info.m_PresentSemaphores[currentFrame]);
+        drawQueue.submit(subInfo, m_Info.m_FrameFences[currentFrame]);
+
+        vk::PresentInfoKHR presentInfo(m_Info.m_PresentSemaphores[currentFrame], swapchain, m_Info.nextImageIndex);
+        auto result_present = drawQueue.presentKHR(presentInfo);
+
+        currentFrame = (currentFrame + 1) % MaxFrameInFlight;
+
     }
 
     void RenderingSystem::OnEvent(Event& e)
@@ -36,13 +62,34 @@ namespace mortal
         m_Info.device.SetDevice(m_Instance, m_Info.window.GetSurface());
         m_Info.swapchain.Create(m_Info.device, m_Info.window);
         m_Info.command.SetCommandPool(m_Info.device);
+
+        //create semaphore and fence
+        {
+            auto& device = m_Info.device.GetDevice();
+            vk::SemaphoreCreateInfo createInfo{};
+            vk::FenceCreateInfo fCreateInfo(vk::FenceCreateFlagBits::eSignaled);
+            for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
+                m_Info.m_GetImageSemaphores[i] = device.createSemaphore(createInfo);
+                m_Info.m_PresentSemaphores[i] = device.createSemaphore(createInfo);
+                m_Info.m_FrameFences[i] = device.createFence(fCreateInfo);
+            }
+        }
     }
 
     void RenderingSystem::ClearUpVulkan()
     {
-        for (auto& renderPass : m_RenderPasses) {
+        for (auto& renderPass : m_RenderParts) {
             renderPass.reset();
         }
+
+        auto& device = m_Info.device.GetDevice();
+        for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
+            device.destroyFence(m_Info.m_FrameFences[i]);
+            device.destroySemaphore(m_Info.m_PresentSemaphores[i]);
+            device.destroySemaphore(m_Info.m_GetImageSemaphores[i]);
+        }
+
+
         m_Info.command.ClearUp();
         m_Info.swapchain.ClearUp();
         m_Info.device.ClearUp();
@@ -132,7 +179,7 @@ namespace mortal
 
     void RenderingSystem::AddRenderPasses()
     {
-        AddRenderPass(new TrianglePass(m_Info));
+        AddRenderPart(new TrianglePart(m_Info));
     }
 
 } // namespace mortal

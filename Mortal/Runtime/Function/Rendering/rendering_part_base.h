@@ -22,10 +22,10 @@ namespace mortal
         std::vector<uint32_t> indeices;
     };
 
-    class RenderPassBase {
+    class RenderPartBase {
     public:
-        RenderPassBase(RenderingSystemInfo& info);
-        virtual ~RenderPassBase() {}
+        RenderPartBase(RenderingSystemInfo& info);
+        virtual ~RenderPartBase() {}
 
         virtual void Init() = 0;
         virtual void ClearUp() = 0;
