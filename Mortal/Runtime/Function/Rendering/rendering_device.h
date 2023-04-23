@@ -36,7 +36,7 @@ namespace mortal
         [[nodiscard]] vk::PhysicalDevice& GetPhysicalDevice();
         [[nodiscard]] RenderingQueue& GetRenderingQueue();
 
-        vk::Format FindSupportFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features);
+        std::pair<vk::Format, bool> FindSupportDepthFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features);
     private:
         void ChooseSuitablePhysicalDevice(vk::Instance& instance);
     private:

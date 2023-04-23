@@ -115,7 +115,7 @@ namespace mortal {
         return m_Queues;
     }
 
-    vk::Format RenderingDevice::FindSupportFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features)
+    std::pair<vk::Format, bool> RenderingDevice::FindSupportDepthFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features)
     {
         for (auto& format : formats) {
             auto formatPro =  GetPhysicalDeviceFormatProperties(format);
@@ -123,12 +123,18 @@ namespace mortal {
             {
             case vk::ImageTiling::eOptimal:
                 if ((formatPro.optimalTilingFeatures & features) == features) {
-                    return format;
+                    if (format == vk::Format::eD32Sfloat) {
+                        return {format, false};
+                    }
+                    return { format, true };
                 }
                 break;
             case vk::ImageTiling::eLinear:
                 if ((formatPro.linearTilingFeatures & features) == features) {
-                    return format;
+                    if (format == vk::Format::eD32Sfloat) {
+                        return { format, false };
+                    }
+                    return { format, true };
                 }
                 break;
             case vk::ImageTiling::eDrmFormatModifierEXT:

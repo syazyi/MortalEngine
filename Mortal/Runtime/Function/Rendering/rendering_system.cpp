@@ -3,7 +3,8 @@
 #include "Window/WindowsWindow.h"
 
 #include "rendering_part_base.h"
-#include "Rendering/Pass/triangle.h"
+#include "Rendering/Part/Triangle/triangle.h"
+#include "Rendering/Part/BlingPhong/blingphong.h"
 namespace mortal
 {
     void RenderingSystem::OnUpdate()
@@ -179,7 +180,8 @@ namespace mortal
 
     void RenderingSystem::AddRenderPasses()
     {
-        AddRenderPart(new TrianglePart(m_Info));
+        //AddRenderPart(new TrianglePart(m_Info));
+        AddRenderPart(new BlingPhong(m_Info));
     }
 
 } // namespace mortal

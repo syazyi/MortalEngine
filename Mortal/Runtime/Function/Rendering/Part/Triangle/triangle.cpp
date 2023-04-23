@@ -22,7 +22,7 @@ namespace mortal
         {
         //Set data
             //auto ObjInfo = LoadObjModel("../../Asset/Model/frog.obj");
-            auto ObjInfo = LoadObjModel("../../Asset/Model/Sphere.obj");
+            auto ObjInfo = LoadObjModel("../../Asset/Model/cube.obj");
 
             Test_Vertices = ObjInfo.vertices;
             Test_Indices = ObjInfo.indeices;
@@ -165,11 +165,10 @@ namespace mortal
 
             //Set Depth Image
             {
-                depthFormat = m_RenderingInfo.device.FindSupportFormat(std::vector<vk::Format>{ vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint }, 
+                auto depthFormats = m_RenderingInfo.device.FindSupportDepthFormat(std::vector<vk::Format>{ vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint }, 
                     vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-                if (depthFormat == vk::Format::eD32Sfloat) {
-                    SupportStencil = false;
-                }
+                depthFormat = depthFormats.first;
+                SupportStencil = depthFormats.second;
                 vk::ImageCreateInfo depthImageCreateInfo({}, vk::ImageType::e2D, depthFormat, vk::Extent3D(extent2d, 1.0f), 1, 1, vk::SampleCountFlagBits::e1,
                     vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive);
                 m_DepthImage = device.createImage(depthImageCreateInfo);

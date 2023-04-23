@@ -22,6 +22,15 @@ namespace mortal
         std::vector<uint32_t> indeices;
     };
 
+    struct StandardGraphicPipelineInfo {
+        vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState;
+        vk::PipelineViewportStateCreateInfo viewportState;
+        vk::PipelineRasterizationStateCreateInfo rasterizationState;
+        vk::PipelineMultisampleStateCreateInfo multisampleState;
+        vk::PipelineDepthStencilStateCreateInfo depthStencilState;
+        vk::PipelineColorBlendStateCreateInfo colorBlendState;
+    };
+
     class RenderPartBase {
     public:
         RenderPartBase(RenderingSystemInfo& info);
@@ -38,6 +47,8 @@ namespace mortal
         vk::DeviceMemory CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags);
         vk::Image CreateImageExclusive();
         vk::DeviceMemory CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags);
+        vk::ShaderModule CreateShaderModule(const std::string& fileName);
+        StandardGraphicPipelineInfo GetStandardGraphicPipelineInfo();
     protected:
         RenderingSystemInfo& m_RenderingInfo;
     };

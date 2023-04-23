@@ -78,6 +78,13 @@ namespace mortal
         return ImageMemory;
     }
 
+    vk::ShaderModule RenderPartBase::CreateShaderModule(const std::string& fileName)
+    {   
+        auto bcode = LoadShader(fileName);
+        auto vertShaderModule = m_RenderingInfo.device.GetDevice().createShaderModule(vk::ShaderModuleCreateInfo({}, bcode.size(), reinterpret_cast<uint32_t*>(bcode.data())));
+        return vertShaderModule;
+    }
+
     TextureInfo RenderPartBase::LoadTexture(const std::string& file)
     {
         TextureInfo Info;
