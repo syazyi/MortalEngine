@@ -5,19 +5,20 @@
 #include "rendering_part_base.h"
 #include "Rendering/Part/Triangle/triangle.h"
 #include "Rendering/Part/BlingPhong/blingphong.h"
+#include "Rendering/Part/UI/ui.h"
 namespace mortal
 {
     void RenderingSystem::OnUpdate()
     {
         auto& device = m_Info.device.GetDevice();
         auto& currentFrame = m_Info.CurrentFrame;
-        auto result_waitFence = device.waitForFences(m_Info.m_FrameFences[currentFrame], VK_TRUE, UINT64_MAX);
+        auto result_waitFence = device.waitForFences(m_Synchronizations.m_FrameFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         auto& swapchain = m_Info.swapchain.GetSwapChain();
-        auto result_nextImageIndex = device.acquireNextImageKHR(swapchain, UINT64_MAX, m_Info.m_GetImageSemaphores[currentFrame]);
+        auto result_nextImageIndex = device.acquireNextImageKHR(swapchain, UINT64_MAX, m_Synchronizations.m_GetImageSemaphores[currentFrame]);
         m_Info.nextImageIndex = result_nextImageIndex.value;
 
-        device.resetFences(m_Info.m_FrameFences[currentFrame]);
+        device.resetFences(m_Synchronizations.m_FrameFences[currentFrame]);
 
         auto& drawCmd = m_Info.command.GetCommandBuffers()[currentFrame];
         drawCmd.reset();
@@ -30,10 +31,10 @@ namespace mortal
         auto& drawQueue = m_Info.device.GetRenderingQueue().PresentQueue.value();
 
         std::array<vk::PipelineStageFlags, 1> pipelineStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
-        vk::SubmitInfo subInfo(m_Info.m_GetImageSemaphores[currentFrame], pipelineStages, drawCmd, m_Info.m_PresentSemaphores[currentFrame]);
-        drawQueue.submit(subInfo, m_Info.m_FrameFences[currentFrame]);
+        vk::SubmitInfo subInfo(m_Synchronizations.m_GetImageSemaphores[currentFrame], pipelineStages, drawCmd, m_Synchronizations.m_PresentSemaphores[currentFrame]);
+        drawQueue.submit(subInfo, m_Synchronizations.m_FrameFences[currentFrame]);
 
-        vk::PresentInfoKHR presentInfo(m_Info.m_PresentSemaphores[currentFrame], swapchain, m_Info.nextImageIndex);
+        vk::PresentInfoKHR presentInfo(m_Synchronizations.m_PresentSemaphores[currentFrame], swapchain, m_Info.nextImageIndex);
         auto result_present = drawQueue.presentKHR(presentInfo);
 
         currentFrame = (currentFrame + 1) % MaxFrameInFlight;
@@ -70,9 +71,9 @@ namespace mortal
             vk::SemaphoreCreateInfo createInfo{};
             vk::FenceCreateInfo fCreateInfo(vk::FenceCreateFlagBits::eSignaled);
             for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
-                m_Info.m_GetImageSemaphores[i] = device.createSemaphore(createInfo);
-                m_Info.m_PresentSemaphores[i] = device.createSemaphore(createInfo);
-                m_Info.m_FrameFences[i] = device.createFence(fCreateInfo);
+                m_Synchronizations.m_GetImageSemaphores[i] = device.createSemaphore(createInfo);
+                m_Synchronizations.m_PresentSemaphores[i] = device.createSemaphore(createInfo);
+                m_Synchronizations.m_FrameFences[i] = device.createFence(fCreateInfo);
             }
         }
     }
@@ -85,9 +86,9 @@ namespace mortal
 
         auto& device = m_Info.device.GetDevice();
         for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
-            device.destroyFence(m_Info.m_FrameFences[i]);
-            device.destroySemaphore(m_Info.m_PresentSemaphores[i]);
-            device.destroySemaphore(m_Info.m_GetImageSemaphores[i]);
+            device.destroyFence(m_Synchronizations.m_FrameFences[i]);
+            device.destroySemaphore(m_Synchronizations.m_PresentSemaphores[i]);
+            device.destroySemaphore(m_Synchronizations.m_GetImageSemaphores[i]);
         }
 
 
@@ -160,12 +161,16 @@ namespace mortal
     void RenderingSystem::SetDebugCallBack()
     {
         if constexpr (EnableValidtion) {
-            vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo({},
-                vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning,
-                vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-                &debugCallback);
-
-            GetAndExecuteFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT", &(VkDebugUtilsMessengerCreateInfoEXT)debugUtilsCreateInfo,
+            VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{};
+            debugUtilsCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+            debugUtilsCreateInfo.messageSeverity = VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+                VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+            debugUtilsCreateInfo.messageType = VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+            debugUtilsCreateInfo.pfnUserCallback = &debugCallback;
+            GetAndExecuteFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT", &debugUtilsCreateInfo,
                 nullptr,
                 &callback);
         }
@@ -181,6 +186,7 @@ namespace mortal
     void RenderingSystem::AddRenderPasses()
     {
         //AddRenderPart(new TrianglePart(m_Info));
+        //AddRenderPart(new UI(m_Info));
         AddRenderPart(new BlingPhong(m_Info));
     }
 

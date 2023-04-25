@@ -8,14 +8,14 @@ namespace mortal {
 	{
         vk::Result result;
         s_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
+        m_InstanceRef = &instance;
         uint32_t queueFamilyIndex_GraphicPresent = 0;
         uint32_t queueFamilyIndex_Compute = 0;
         //Get Physical Device and queue family index
         {
             ChooseSuitablePhysicalDevice(instance);
 
-            uint32_t queueFamilyCount = 0;
+            //uint32_t queueFamilyCount = 0;
             std::vector<vk::QueueFamilyProperties> properties = m_PhysicalDevice.getQueueFamilyProperties();
             
             uint32_t temp = 0;
@@ -115,7 +115,12 @@ namespace mortal {
         return m_Queues;
     }
 
-    std::pair<vk::Format, bool> RenderingDevice::FindSupportDepthFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features)
+    vk::Instance& RenderingDevice::GetInstanceRef()
+    {
+        return *m_InstanceRef;
+    }
+
+    std::pair<vk::Format, bool> RenderingDevice::FindSupportDepthFormat(const std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features)
     {
         for (auto& format : formats) {
             auto formatPro =  GetPhysicalDeviceFormatProperties(format);
@@ -167,7 +172,7 @@ namespace mortal {
         }
     }
 
-    uint32_t RenderingDevice::FindMemoryIndex(std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags) {
+    uint32_t RenderingDevice::FindMemoryIndex(const std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags) {
         vk::PhysicalDeviceMemoryProperties property = m_PhysicalDevice.getMemoryProperties();
         uint32_t index = 0;
         for (; index < property.memoryTypeCount; index++) {

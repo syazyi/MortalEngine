@@ -2,9 +2,10 @@
 
 namespace mortal
 {
-    BlingPhong::BlingPhong(RenderingSystemInfo& info) : RenderPartBase(info)
+    BlingPhong::BlingPhong(RenderingSystemInfo& info) : RenderPartBase(info), m_UITool(info)
     {
         Init();
+        m_UITool.InitUI(m_BlingPhongPass);
     }
 
     BlingPhong::~BlingPhong()
@@ -183,20 +184,19 @@ namespace mortal
             };
             vk::PipelineVertexInputStateCreateInfo vertexInput({}, bindDes, attrDes);
 
-            StandardGraphicPipelineInfo pipelineInfo;
-            pipelineInfo.inputAssemblyState = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, VK_FALSE);
+            auto inputAssemblyState = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, VK_FALSE);
             vk::Viewport viewprot(0, 0, extent2D.width, extent2D.height, 0.0f, 1.0f);
             vk::Rect2D scissor({ 0, 0 }, extent2D);
-            pipelineInfo.viewportState = vk::PipelineViewportStateCreateInfo({}, viewprot, scissor);
-            pipelineInfo.rasterizationState = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+            auto viewportState = vk::PipelineViewportStateCreateInfo({}, viewprot, scissor);
+            auto rasterizationState = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
                 VK_FALSE, {}, {}, {}, 1.0f);
-            pipelineInfo.multisampleState = vk::PipelineMultisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE);
-            pipelineInfo.depthStencilState = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE);
+            auto multisampleState = vk::PipelineMultisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE);
+            auto depthStencilState = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE);
 
             vk::PipelineColorBlendAttachmentState state(VK_FALSE, vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
                 vk::BlendFactor::eZero, vk::BlendFactor::eOne, vk::BlendOp::eAdd,
                 vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-            pipelineInfo.colorBlendState = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, state);
+            auto colorBlendState = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, state);
 
             std::vector<vk::DynamicState> dynamicStates{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
             vk::PipelineDynamicStateCreateInfo dynamicState({}, dynamicStates);
@@ -209,8 +209,8 @@ namespace mortal
             
             vk::PipelineLayoutCreateInfo layoutCreateInfo({}, m_MvpAndSamplerSetLayout);
             m_BlingPhongPipelineLayout = device.createPipelineLayout(layoutCreateInfo);
-            vk::GraphicsPipelineCreateInfo blingphongPipelineInfo({}, shaderStages, &vertexInput, &pipelineInfo.inputAssemblyState, nullptr, & pipelineInfo.viewportState, & pipelineInfo.rasterizationState,
-                & pipelineInfo.multisampleState, & pipelineInfo.depthStencilState, & pipelineInfo.colorBlendState, &dynamicState, m_BlingPhongPipelineLayout, m_BlingPhongPass, 0, nullptr, -1);
+            vk::GraphicsPipelineCreateInfo blingphongPipelineInfo({}, shaderStages, &vertexInput, &inputAssemblyState, nullptr, &viewportState, &rasterizationState,
+                &multisampleState, &depthStencilState, &colorBlendState, &dynamicState, m_BlingPhongPipelineLayout, m_BlingPhongPass, 0, nullptr, -1);
             m_BlingPhongPipeline = device.createGraphicsPipeline({}, blingphongPipelineInfo).value;
 
             device.destroyShaderModule(vertShaderModule);
@@ -223,6 +223,8 @@ namespace mortal
         auto& device = m_RenderingInfo.device.GetDevice();
 
         device.waitIdle();
+
+        m_UITool.ClearUpUI();
 
         device.destroyPipeline(m_BlingPhongPipeline);
         device.destroyPipelineLayout(m_BlingPhongPipelineLayout);
@@ -266,6 +268,7 @@ namespace mortal
 
         auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
         auto extent2D = m_RenderingInfo.window.GetExtent2D();
+
         drawCmd.begin(vk::CommandBufferBeginInfo());
 
         std::vector<vk::ClearValue> clearValues{ 
@@ -284,6 +287,8 @@ namespace mortal
 
         drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_BlingPhongPipelineLayout, 0, m_MvpAndSamplerSets, {});
         drawCmd.drawIndexed(m_ModelInfo.indeices.size(), 1, 0, 0, 0);
+
+        m_UITool.Draw(drawCmd);
 
         drawCmd.endRenderPass();
         drawCmd.end();

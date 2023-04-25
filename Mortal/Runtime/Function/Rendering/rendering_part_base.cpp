@@ -39,7 +39,7 @@ namespace mortal
         return m_RenderingInfo.device.GetDevice().createBuffer(createInfo);
     }
 
-    vk::DeviceMemory RenderPartBase::CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags)
+    vk::DeviceMemory RenderPartBase::CreateMemoryAndBind_Buffer(const std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags)
     {
         auto bufferCount = buffers.size();
         auto device = m_RenderingInfo.device.GetDevice();

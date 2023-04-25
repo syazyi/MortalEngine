@@ -23,6 +23,7 @@ namespace mortal
     class RenderingDevice {
     public:
     //init and clear
+        RenderingDevice() = default;
         void SetDevice(vk::Instance& instance, vk::SurfaceKHR& surface);
         void ClearUp();
 
@@ -31,12 +32,13 @@ namespace mortal
         [[nodiscard]] vk::PhysicalDeviceProperties GetPhysicalDeviceProperties();
         [[nodiscard]] vk::FormatProperties GetPhysicalDeviceFormatProperties(vk::Format format);
         [[nodiscard]] vk::PhysicalDeviceFeatures GetPhysicalDeviceFeature();
-        [[nodiscard]] uint32_t FindMemoryIndex(std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags);
+        [[nodiscard]] uint32_t FindMemoryIndex(const std::vector<vk::MemoryRequirements>& requirements, vk::MemoryPropertyFlags flags);
         [[nodiscard]] vk::Device& GetDevice();
         [[nodiscard]] vk::PhysicalDevice& GetPhysicalDevice();
         [[nodiscard]] RenderingQueue& GetRenderingQueue();
+        [[nodiscard]] vk::Instance& GetInstanceRef();
 
-        std::pair<vk::Format, bool> FindSupportDepthFormat(std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features);
+        std::pair<vk::Format, bool> FindSupportDepthFormat(const std::vector<vk::Format>& formats, vk::ImageTiling imageTiling, vk::FormatFeatureFlags features);
     private:
         void ChooseSuitablePhysicalDevice(vk::Instance& instance);
     private:
@@ -46,7 +48,7 @@ namespace mortal
 
         vk::SurfaceKHR m_Surface;
 
-
+        vk::Instance* m_InstanceRef;
         inline static std::vector<const char*> s_DeviceExtensions;
     };
 

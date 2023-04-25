@@ -20,11 +20,13 @@ namespace mortal
 
     constexpr uint8_t MaxFrameInFlight = 2;
 
+    /*
      static void CheckVulkanResult(vk::Result& result, vk::Result condition, const char* message) {
         if (result != condition) {
              throw std::runtime_error(message);
         }
     }
+    */
 
     template<typename T, typename... Args>
     vk::Result LoadFunction() {

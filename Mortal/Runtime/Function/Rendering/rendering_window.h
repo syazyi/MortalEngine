@@ -12,6 +12,7 @@ namespace mortal {
 		void ClearUp(vk::Instance& instance);
 		[[nodiscard]] vk::SurfaceKHR& GetSurface();
 		[[nodiscard]] vk::Extent2D GetExtent2D();
+		[[nodiscard]] MortalWindowType* GetWindow();
 	private:
 		vk::SurfaceKHR m_Surface;
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #define EVENT_SET_FUNCTION(name) \
     EventType GetType() const override{ return m_type; } \
-    const char* GetName() const{ return m_name; } \
+    const char* GetName() const override{ return m_name; } \
     const char* m_name = #name;
 namespace mortal
 {
@@ -11,7 +11,7 @@ namespace mortal
     public:
         WindowResizeEvent(const int width, const int height) : m_width(width), m_height(height){}
         EVENT_SET_FUNCTION(WindowResizeEvent)
-        virtual std::string ToString() const {
+        virtual std::string ToString() const override {
             std::stringstream ss;
             ss << m_name << ": " << m_width << ", " << m_height << "\n";
             return ss.str();
@@ -26,7 +26,7 @@ namespace mortal
     public:
         WindosCloseEvent() = default;
         EVENT_SET_FUNCTION(WindosCloseEvent)
-        virtual std::string ToString() const {
+        virtual std::string ToString() const override {
             std::stringstream ss;
             ss << m_name << "\n";
             return ss.str();
@@ -49,7 +49,7 @@ namespace mortal
     public:
         explicit KeyPressEvent(int Key) : KeyEvent(Key) {}
         EVENT_SET_FUNCTION(KeyPressEvent)
-        virtual std::string ToString() const {
+        virtual std::string ToString() const override {
             std::stringstream ss;
             ss << m_name << "\n";
             return ss.str();
@@ -63,7 +63,7 @@ namespace mortal
     public:
         explicit KeyReleaseEvent(int Key) : KeyEvent(Key) {}
         EVENT_SET_FUNCTION(KeyReleaseEvent)
-            virtual std::string ToString() const {
+            virtual std::string ToString() const override {
             std::stringstream ss;
             ss << m_name << "\n";
             return ss.str();
@@ -76,7 +76,7 @@ namespace mortal
     public:
         MouseMovedEvent(double xPos, double yPos) : x_pos(xPos), y_pos(yPos){}
         EVENT_SET_FUNCTION(MouseMovedEvent)
-        virtual std::string ToString() const {
+        virtual std::string ToString() const override {
             std::stringstream ss;
             ss << m_name << ": " << x_pos << ", " << y_pos << "\n";
             return ss.str();

@@ -22,12 +22,14 @@ namespace mortal
 
         uint8_t CurrentFrame{0};
         uint32_t nextImageIndex;
+    };
 
+    struct SynchronizationGlobal
+    {
         std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
         std::array<vk::Semaphore, MaxFrameInFlight> m_PresentSemaphores;
         std::array<vk::Fence, MaxFrameInFlight> m_FrameFences;
     };
-
     class MORTAL_API RenderingSystem : public Layer{
     public:
         ~RenderingSystem();
@@ -93,7 +95,7 @@ namespace mortal
         vk::Instance m_Instance;
         VkDebugUtilsMessengerEXT callback;
         RenderingSystemInfo m_Info;
-
+        SynchronizationGlobal m_Synchronizations;
         std::vector<std::unique_ptr<RenderPartBase>> m_RenderParts;
 
         //Draw info

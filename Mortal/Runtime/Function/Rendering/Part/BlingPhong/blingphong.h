@@ -1,5 +1,6 @@
 #pragma once 
 #include "Rendering/rendering_part_base.h"
+#include "Rendering/Part/UI/uiTool.h"
 namespace mortal
 {
     class BlingPhong : public RenderPartBase{
@@ -15,7 +16,8 @@ namespace mortal
         virtual void Init() override;
         virtual void ClearUp() override;
         virtual void Draw() override;
-
+    private:
+        UITool m_UITool;
     private:
         //data
         LoadedModelInfo m_ModelInfo;

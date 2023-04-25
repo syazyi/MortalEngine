@@ -1,4 +1,4 @@
-#include "Editor.h"
+#include "editor.h"
 
 #include <functional>
 #include "Events/WindowEvent.h"

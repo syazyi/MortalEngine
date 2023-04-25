@@ -5,7 +5,6 @@ namespace mortal {
 
 	void RenderingWindow::SetWindow(vk::Instance& instance)
 	{
-
 		//Get surface detail information
 		if constexpr (Mortal_PlatformID == 1) {
 			m_windowRef = WindowsWindow::GetWindow();
@@ -36,6 +35,11 @@ namespace mortal {
 		extent2D.setHeight(static_cast<uint32_t>(height));
 
 		return extent2D;
+	}
+
+	MortalWindowType* RenderingWindow::GetWindow()
+	{
+		return m_windowRef;
 	}
 
 }

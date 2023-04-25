@@ -11,7 +11,7 @@ namespace mortal
 			auto& pDevice = rDevice.GetPhysicalDevice();
 
 			m_SurfaceDetail.SurfaceCapabilities = pDevice.getSurfaceCapabilitiesKHR(*m_SurfaceRef);
-			auto& surfaceFormats = pDevice.getSurfaceFormatsKHR(*m_SurfaceRef);
+			auto surfaceFormats = pDevice.getSurfaceFormatsKHR(*m_SurfaceRef);
 			bool FindFormat = false;
 			for (auto& surfaceFormat : surfaceFormats) {
 				if (surfaceFormat.format == vk::Format::eB8G8R8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
@@ -24,7 +24,7 @@ namespace mortal
 				m_SurfaceDetail.SurfaceFormats = surfaceFormats[0];
 			}
 
-			auto& presentModes = pDevice.getSurfacePresentModesKHR(*m_SurfaceRef);
+			auto presentModes = pDevice.getSurfacePresentModesKHR(*m_SurfaceRef);
 			bool IsMailBox = false;
 			bool IsFifo = false;
 			for (auto& presentMode : presentModes) {

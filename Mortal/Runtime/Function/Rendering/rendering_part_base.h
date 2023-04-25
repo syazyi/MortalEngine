@@ -35,7 +35,7 @@ namespace mortal
         TextureInfo LoadTexture(const std::string& file);
         LoadedModelInfo LoadObjModel(const std::string& file);
         vk::Buffer CreateBufferExclusive(vk::DeviceSize size, vk::BufferUsageFlags flags);
-        vk::DeviceMemory CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags);
+        vk::DeviceMemory CreateMemoryAndBind_Buffer(const std::vector<vk::Buffer>& buffers, vk::MemoryPropertyFlags flags);
         vk::Image CreateImageExclusive();
         vk::DeviceMemory CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags);
         vk::ShaderModule CreateShaderModule(const std::string& fileName);
