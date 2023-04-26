@@ -59,15 +59,14 @@ namespace mortal
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
-    void UITool::Draw(vk::CommandBuffer drawCmd)
+    void UITool::Draw(vk::CommandBuffer drawCmd, std::function<void(void)> uiFunc)
     {
         //Test
-        bool show_demo_window = true;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::ShowDemoWindow(&show_demo_window);
+        uiFunc();
 
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();

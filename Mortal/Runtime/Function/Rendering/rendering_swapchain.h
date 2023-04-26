@@ -14,7 +14,7 @@ namespace mortal
     public:
         void Create(RenderingDevice& rDevice, RenderingWindow& rWindow);
         void ClearUp();
-        void ReCreateSwapChain(MortalWindowType* window);
+        void ReCreateSwapChain();
         SurfaceDetail& GetSurfaceDetail();
         std::vector<vk::ImageView>& GetSwapChainImageViews();
         [[nodiscard]] vk::SwapchainKHR& GetSwapChain();

@@ -17,7 +17,7 @@ namespace mortal
         ~UITool() {}
 
         void InitUI(vk::RenderPass render_pass);
-        void Draw(vk::CommandBuffer drawCmd);
+        void Draw(vk::CommandBuffer drawCmd, std::function<void(void)> uiFunc);
         void ClearUpUI();
     private:
         RenderingSystemInfo& m_RenderingInfo;

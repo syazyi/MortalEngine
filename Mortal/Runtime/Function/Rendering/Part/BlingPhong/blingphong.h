@@ -10,12 +10,22 @@ namespace mortal
             glm::mat4 view;
             glm::mat4 proj;
         };
+
+        struct BlingPhongMaterial
+        {
+            glm::vec4 LightColor{1.0f, 1.0f, 1.0f, 1.0f};
+            glm::vec4 Ka{ 0.1f, 0.1f, 0.1f, 1.0f };
+            glm::vec4 Kd{ 0.5f, 0.5f, 0.5f, 1.0f };
+            glm::vec4 Ks{ 1.0f, 1.0f, 1.0f, 1.0f };
+        };
+
         BlingPhong(RenderingSystemInfo& info);
         ~BlingPhong();
 
         virtual void Init() override;
         virtual void ClearUp() override;
         virtual void Draw() override;
+
     private:
         UITool m_UITool;
     private:
@@ -52,6 +62,8 @@ namespace mortal
         //blingphong pipeline
         vk::Pipeline m_BlingPhongPipeline;
         vk::PipelineLayout m_BlingPhongPipelineLayout;
+        //UI info
+        BlingPhongMaterial materialInfo;
     };
     
 } // namespace mortal

@@ -57,6 +57,11 @@ namespace mortal
 		device.destroySwapchainKHR(m_SwapChain);
 	}
 
+	void RenderingSwapChain::ReCreateSwapChain()
+	{
+
+	}
+
 	SurfaceDetail& RenderingSwapChain::GetSurfaceDetail()
 	{
 		return m_SurfaceDetail;

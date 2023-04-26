@@ -207,7 +207,8 @@ namespace mortal
             vk::PipelineShaderStageCreateInfo fragshaderStage({}, vk::ShaderStageFlagBits::eFragment, fragShaderModule, "main");
             std::vector<vk::PipelineShaderStageCreateInfo> shaderStages{ vertshaderStage, fragshaderStage };
             
-            vk::PipelineLayoutCreateInfo layoutCreateInfo({}, m_MvpAndSamplerSetLayout);
+            vk::PushConstantRange materialRange(vk::ShaderStageFlagBits::eFragment, 0, sizeof(BlingPhongMaterial));
+            vk::PipelineLayoutCreateInfo layoutCreateInfo({}, m_MvpAndSamplerSetLayout, materialRange);
             m_BlingPhongPipelineLayout = device.createPipelineLayout(layoutCreateInfo);
             vk::GraphicsPipelineCreateInfo blingphongPipelineInfo({}, shaderStages, &vertexInput, &inputAssemblyState, nullptr, &viewportState, &rasterizationState,
                 &multisampleState, &depthStencilState, &colorBlendState, &dynamicState, m_BlingPhongPipelineLayout, m_BlingPhongPass, 0, nullptr, -1);
@@ -285,10 +286,16 @@ namespace mortal
         drawCmd.bindVertexBuffers(0, { m_VertexBuffer }, {0});
         drawCmd.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
 
+        drawCmd.pushConstants<BlingPhongMaterial>(m_BlingPhongPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0u, materialInfo);
         drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_BlingPhongPipelineLayout, 0, m_MvpAndSamplerSets, {});
         drawCmd.drawIndexed(m_ModelInfo.indeices.size(), 1, 0, 0, 0);
 
-        m_UITool.Draw(drawCmd);
+        m_UITool.Draw(drawCmd, [&material = materialInfo]() {
+            ImGui::ColorEdit3("Light Color", &material.LightColor[0]);
+            ImGui::ColorEdit3("Ka", &material.Ka[0]);
+            ImGui::ColorEdit3("kd", &material.Kd[0]);
+            ImGui::ColorEdit3("ks", &material.Ks[0]);
+        });
 
         drawCmd.endRenderPass();
         drawCmd.end();
