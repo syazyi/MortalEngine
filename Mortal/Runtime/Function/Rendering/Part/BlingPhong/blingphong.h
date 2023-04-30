@@ -13,10 +13,14 @@ namespace mortal
 
         struct BlingPhongMaterial
         {
-            glm::vec4 LightColor{1.0f, 1.0f, 1.0f, 1.0f};
-            glm::vec4 Ka{ 0.1f, 0.1f, 0.1f, 1.0f };
-            glm::vec4 Kd{ 0.5f, 0.5f, 0.5f, 1.0f };
-            glm::vec4 Ks{ 1.0f, 1.0f, 1.0f, 1.0f };
+            glm::vec3 LightColor{1.0f, 1.0f, 1.0f};
+            int q{ 256 };
+            glm::vec3 Ka{ 0.1f, 0.1f, 0.1f };
+            float constant{ 1.0f };
+            glm::vec3 Kd{ 0.5f, 0.5f, 0.5f };
+            float linear{ 0.09f };
+            glm::vec3 Ks{ 1.0f, 1.0f, 1.0f };
+            float quadratic{ 0.032f };
         };
 
         BlingPhong(RenderingSystemInfo& info);

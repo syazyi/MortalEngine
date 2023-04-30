@@ -290,11 +290,17 @@ namespace mortal
         drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_BlingPhongPipelineLayout, 0, m_MvpAndSamplerSets, {});
         drawCmd.drawIndexed(m_ModelInfo.indeices.size(), 1, 0, 0, 0);
 
+
+
         m_UITool.Draw(drawCmd, [&material = materialInfo]() {
             ImGui::ColorEdit3("Light Color", &material.LightColor[0]);
+            ImGui::InputInt("Cos q value:", &material.q);
             ImGui::ColorEdit3("Ka", &material.Ka[0]);
+            ImGui::InputFloat("Attenuation constant:", &material.constant);
             ImGui::ColorEdit3("kd", &material.Kd[0]);
+            ImGui::InputFloat("Attenuation linear:", &material.linear);
             ImGui::ColorEdit3("ks", &material.Ks[0]);
+            ImGui::InputFloat("Attenuation quadratic:", &material.quadratic);
         });
 
         drawCmd.endRenderPass();
