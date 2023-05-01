@@ -68,6 +68,26 @@ namespace mortal
         vk::PipelineLayout m_BlingPhongPipelineLayout;
         //UI info
         BlingPhongMaterial materialInfo;
+
+        //Skybox
+        LoadedModelInfo m_SkyboxModel;
+        MVP skyboxMvp;
+        vk::Buffer m_SkyboxMvpBuffer;
+        vk::DeviceMemory m_SkyboxMvpMemory;
+        void* m_SkyboxMvpData;
+
+        vk::Buffer m_SkyboxVertexBuffer;
+        vk::Buffer m_SkyboxIndexBuffer;
+        vk::DeviceMemory m_SkyboxVertexIndexMemory;
+
+        vk::Image m_SkyboxTexture;
+        vk::DeviceMemory m_SkyboxMemory;
+        vk::ImageView m_SkyboxView;
+        vk::Sampler m_SkyboxSampler;
+
+        vk::Pipeline m_SkyboxPipeline;
+        vk::PipelineLayout m_SkyboxPipelineLayout;
+        std::vector<vk::DescriptorSet> m_SkyboxDescriptorSets;
     };
     
 } // namespace mortal

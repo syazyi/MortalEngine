@@ -9,6 +9,7 @@
 #include "rendering_window.h"
 #include "rendering_swapchain.h"
 #include "rendering_command.h"
+#include "rendering_camera.h"
 namespace mortal
 {
     class RenderPartBase;
@@ -22,6 +23,7 @@ namespace mortal
 
         uint8_t CurrentFrame{0};
         uint32_t nextImageIndex;
+        Camera m_Camera;
     };
 
     struct SynchronizationGlobal
@@ -91,6 +93,7 @@ namespace mortal
 
         void AddRenderPasses();
 
+        void CameraMove();
     private:
         vk::Instance m_Instance;
         VkDebugUtilsMessengerEXT callback;
@@ -98,7 +101,6 @@ namespace mortal
         SynchronizationGlobal m_Synchronizations;
         std::vector<std::unique_ptr<RenderPartBase>> m_RenderParts;
 
-        //Draw info
     };
 
 

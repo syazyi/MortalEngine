@@ -17,15 +17,33 @@ namespace mortal
     {
         //Load Model
         m_ModelInfo = LoadObjModel("../../Asset/Model/Sphere.obj");
+        //Load skybox
+        m_SkyboxModel = LoadObjModel("../../Asset/Model/cube.obj");
         //Load Texture
         auto textureInfo = LoadTexture("NahidaClip.png");
+        //Load Skybox
+        std::array<TextureInfo, 6> skyboxTexture{
+            LoadTexture("skybox/right.jpg"),
+            LoadTexture("skybox/left.jpg"),
+            LoadTexture("skybox/top.jpg"),
+            LoadTexture("skybox/bottom.jpg"),
+            LoadTexture("skybox/front.jpg"),
+            LoadTexture("skybox/back.jpg")
+        };
+
         //mvp
         auto extent2D = m_RenderingInfo.window.GetExtent2D();
 
         mvp.model = glm::mat4(1.0f);
-        mvp.view = glm::lookAt(glm::vec3{ 5.0f, 5.0f, 5.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 0.0f, 1.0f });
+        mvp.view = m_RenderingInfo.m_Camera.GetView();
         mvp.proj = glm::perspective(glm::radians(45.f), (float)extent2D.width / (float)extent2D.height, 0.1f, 100.f);
         mvp.proj[1][1] *= -1;
+
+        //skybox mvp
+        skyboxMvp.model = glm::mat4(1.0f);
+        skyboxMvp.view = glm::mat4(glm::mat3(mvp.view));
+        //skyboxMvp.view = mvp.view;
+        skyboxMvp.proj = mvp.proj;
 
         auto& device = m_RenderingInfo.device.GetDevice();
         auto& command = m_RenderingInfo.command;
@@ -34,14 +52,26 @@ namespace mortal
         auto depthFormatInfo = m_RenderingInfo.device.FindSupportDepthFormat(std::vector<vk::Format>{ vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint },
             vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 
+        //model size
         auto vertices_size = m_ModelInfo.vertices.size() * sizeof(m_ModelInfo.vertices[0]);
         auto indices_size = m_ModelInfo.indeices.size() * sizeof(m_ModelInfo.indeices[0]);
+
+        //skybox size
+        auto skybox_vertices_size = m_SkyboxModel.vertices.size() * sizeof(m_SkyboxModel.vertices[0]);
+        auto skybox_indices_size = m_SkyboxModel.indeices.size() * sizeof(m_SkyboxModel.indeices[0]);
         //create vertex buffer index buffer and texture image include sampler and depth Image
         {
+            //model vertex
             m_VertexBuffer = CreateBufferExclusive(vertices_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
             m_IndexBuffer = CreateBufferExclusive(indices_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
             m_VertexIndexMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBuffer, m_IndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
-        
+            
+            //skybox vertex
+            m_SkyboxVertexBuffer = CreateBufferExclusive(skybox_vertices_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+            m_SkyboxIndexBuffer = CreateBufferExclusive(skybox_indices_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+            m_SkyboxVertexIndexMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_SkyboxVertexBuffer, m_SkyboxIndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+            //model texture
             vk::ImageCreateInfo textureImageCreateInfo({}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Srgb, vk::Extent3D{ static_cast<uint32_t>(textureInfo.texWidth), static_cast<uint32_t>(textureInfo.texHeight), 1 },
                 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
             m_TextureImage = device.createImage(textureImageCreateInfo);
@@ -55,7 +85,21 @@ namespace mortal
                 0.0f, 1.0f, vk::BorderColor::eFloatOpaqueBlack, VK_FALSE);
             m_TextureSampler = device.createSampler(textureSamplerCreateInfo);
 
+            //skybox texture
+            vk::ImageCreateInfo skyboxImageCreateInfo(vk::ImageCreateFlagBits::eCubeCompatible, vk::ImageType::e2D, vk::Format::eR8G8B8A8Srgb, vk::Extent3D{ static_cast<uint32_t>(skyboxTexture[0].texWidth), static_cast<uint32_t>(skyboxTexture[0].texHeight), 1},
+                1, 6, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+            m_SkyboxTexture = device.createImage(skyboxImageCreateInfo);
+            m_SkyboxMemory = CreateMemoryAndBind_Image(m_SkyboxTexture, vk::MemoryPropertyFlagBits::eDeviceLocal);
+            vk::SamplerCreateInfo skyboxSamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
+                vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0.0f, VK_TRUE, 1.0f, VK_FALSE, vk::CompareOp::eNever,
+                0.0f, 1.0f, vk::BorderColor::eFloatOpaqueBlack, VK_FALSE);
+            m_SkyboxSampler = device.createSampler(skyboxSamplerCreateInfo);
+            vk::ImageViewCreateInfo skyboxImageViewCreateInfo({}, m_SkyboxTexture, vk::ImageViewType::eCube, vk::Format::eR8G8B8A8Srgb,
+                vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA), 
+                vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6));
+            m_SkyboxView = device.createImageView(skyboxImageViewCreateInfo);
 
+            //depth image
             vk::ImageCreateInfo depthImageCreateInfo({}, vk::ImageType::e2D, depthFormatInfo.first, vk::Extent3D(extent2D, 1.0f), 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, 
                 vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive);
             m_DepthImage = device.createImage(depthImageCreateInfo);
@@ -64,12 +108,19 @@ namespace mortal
                 vk::ComponentMapping(), vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
             m_DepthImageView = device.createImageView(depthImageViewCreateInfo);
 
+            //model uniform buffer
             m_MvpBuffer = CreateBufferExclusive(sizeof(MVP), vk::BufferUsageFlagBits::eUniformBuffer);
             m_MvpMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_MvpBuffer }, vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
             m_MvpData = device.mapMemory(m_MvpMemory, 0, sizeof(MVP));
+
+            //skybox uniform buffre
+            m_SkyboxMvpBuffer = CreateBufferExclusive(sizeof(MVP), vk::BufferUsageFlagBits::eUniformBuffer);
+            m_SkyboxMvpMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_SkyboxMvpBuffer }, vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
+            m_SkyboxMvpData = device.mapMemory(m_SkyboxMvpMemory, 0, sizeof(MVP));
         }
         //copy vertex, index, image info 
         {
+            //model vertex index copy
             vk::Buffer vertexIndexStageBuffer = CreateBufferExclusive(vertices_size + indices_size, vk::BufferUsageFlagBits::eTransferSrc);
             vk::DeviceMemory vertexIndexStageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ vertexIndexStageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
             void* data = device.mapMemory(vertexIndexStageMemory, 0, vertices_size);
@@ -80,6 +131,18 @@ namespace mortal
             memcpy(data, m_ModelInfo.indeices.data(), indices_size);
             device.unmapMemory(vertexIndexStageMemory);
 
+            //skybox vertex index copy
+            vk::Buffer skybox_VertexIndexStageBuffer = CreateBufferExclusive(skybox_vertices_size + skybox_indices_size, vk::BufferUsageFlagBits::eTransferSrc);
+            vk::DeviceMemory skybox_VertexIndexStageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ skybox_VertexIndexStageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+            data = device.mapMemory(skybox_VertexIndexStageMemory, 0, skybox_vertices_size);
+            memcpy(data, m_SkyboxModel.vertices.data(), skybox_vertices_size);
+            device.unmapMemory(skybox_VertexIndexStageMemory);
+
+            data = device.mapMemory(skybox_VertexIndexStageMemory, skybox_vertices_size, skybox_indices_size);
+            memcpy(data, m_SkyboxModel.indeices.data(), skybox_indices_size);
+            device.unmapMemory(skybox_VertexIndexStageMemory);
+
+            //model texture copy
             vk::Buffer textureStageBuffer = CreateBufferExclusive(textureInfo.dataSize, vk::BufferUsageFlagBits::eTransferSrc);
             vk::DeviceMemory textureStageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ textureStageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
             data = device.mapMemory(textureStageMemory, 0, textureInfo.dataSize);
@@ -104,6 +167,45 @@ namespace mortal
             cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, { transferDstToShaderRead});
 
             command.EndSingleCommand(cmd, graphicQueue);
+            
+            //skybox texture copy
+            vk::Buffer skybox_TextureStageBuffer = CreateBufferExclusive(skyboxTexture[0].dataSize * 6, vk::BufferUsageFlagBits::eTransferSrc);
+            vk::DeviceMemory skybox_TextureStageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ skybox_TextureStageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+            data = device.mapMemory(skybox_TextureStageMemory, 0, skyboxTexture[0].dataSize * 6);
+            for (uint32_t i = 0; i < 6; i++) {
+                memcpy(reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(data) + i * skyboxTexture[i].dataSize), skyboxTexture[i].data, skyboxTexture[i].dataSize);
+            }
+            device.unmapMemory(skybox_TextureStageMemory);
+
+            cmd = command.BeginSingleCommand();
+            cmd.copyBuffer(skybox_VertexIndexStageBuffer, m_SkyboxVertexBuffer, { vk::BufferCopy(0, 0, skybox_vertices_size) });
+            cmd.copyBuffer(skybox_VertexIndexStageBuffer, m_SkyboxIndexBuffer, { vk::BufferCopy(skybox_vertices_size, 0, skybox_indices_size) });
+
+            vk::ImageMemoryBarrier skybox_UndefineToTransferDst(vk::AccessFlagBits::eNone, vk::AccessFlagBits::eTransferWrite,
+                vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, {}, {},
+                m_SkyboxTexture, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6));
+            cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, { skybox_UndefineToTransferDst });
+
+            std::vector<vk::BufferImageCopy> regions;
+
+            for (int i = 0; i < 6; i++) {
+                regions.push_back(vk::BufferImageCopy(i * skyboxTexture[0].dataSize, skyboxTexture[i].texWidth, skyboxTexture[i].texHeight,
+                    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, i, 1), vk::Offset3D(0, 0, 0), vk::Extent3D(skyboxTexture[i].texWidth, skyboxTexture[i].texHeight, 1.0f)));
+            }
+            cmd.copyBufferToImage(skybox_TextureStageBuffer, m_SkyboxTexture, vk::ImageLayout::eTransferDstOptimal, regions);
+
+            vk::ImageMemoryBarrier skybox_TransferDstToShaderRead(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead,
+                vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, {}, {},
+                m_SkyboxTexture, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6));
+            cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, { skybox_TransferDstToShaderRead });
+
+            command.EndSingleCommand(cmd, graphicQueue);
+
+            //clear up stage info
+            device.freeMemory(skybox_TextureStageMemory);
+            device.destroyBuffer(skybox_TextureStageBuffer);
+            device.freeMemory(skybox_VertexIndexStageMemory);
+            device.destroyBuffer(skybox_VertexIndexStageBuffer);
 
             device.freeMemory(textureStageMemory);
             device.destroyBuffer(textureStageBuffer);
@@ -119,15 +221,17 @@ namespace mortal
             vk::DescriptorSetLayoutCreateInfo MvpAndSamplerlayoutCreateInfo({}, bindings);
             m_MvpAndSamplerSetLayout = device.createDescriptorSetLayout(MvpAndSamplerlayoutCreateInfo);
 
+
             std::vector<vk::DescriptorPoolSize> poolSizes{
-                vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1),
-                vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1)
+                vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2),
+                vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2)
             };
-            vk::DescriptorPoolCreateInfo poolCreateInfo({}, 1, poolSizes);
+            vk::DescriptorPoolCreateInfo poolCreateInfo({}, 2, poolSizes);
             m_DescriptorPool = device.createDescriptorPool(poolCreateInfo);
 
             vk::DescriptorSetAllocateInfo setAllocateInfo(m_DescriptorPool, m_MvpAndSamplerSetLayout);
             m_MvpAndSamplerSets = device.allocateDescriptorSets(setAllocateInfo);
+            m_SkyboxDescriptorSets = device.allocateDescriptorSets(setAllocateInfo);
 
             vk::DescriptorBufferInfo MvpbufferInfo(m_MvpBuffer, 0, sizeof(MVP));
             vk::DescriptorImageInfo samplerImageInfo(m_TextureSampler, m_TextureImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -135,6 +239,13 @@ namespace mortal
                 vk::WriteDescriptorSet(m_MvpAndSamplerSets[0], 0, 0, vk::DescriptorType::eUniformBuffer, {}, MvpbufferInfo),
                 vk::WriteDescriptorSet(m_MvpAndSamplerSets[0], 1, 0, vk::DescriptorType::eCombinedImageSampler, samplerImageInfo)
             }, {});
+
+            vk::DescriptorBufferInfo skybox_MvpbufferInfo(m_SkyboxMvpBuffer, 0, sizeof(MVP));
+            vk::DescriptorImageInfo skybox_SamplerImageInfo(m_SkyboxSampler, m_SkyboxView, vk::ImageLayout::eShaderReadOnlyOptimal);
+            device.updateDescriptorSets({
+                vk::WriteDescriptorSet(m_SkyboxDescriptorSets[0], 0, 0, vk::DescriptorType::eUniformBuffer, {}, skybox_MvpbufferInfo),
+                vk::WriteDescriptorSet(m_SkyboxDescriptorSets[0], 1, 0, vk::DescriptorType::eCombinedImageSampler, skybox_SamplerImageInfo)
+                }, {});
         }
         //Set RenderPass and Framebuffer 
         {
@@ -214,6 +325,26 @@ namespace mortal
                 &multisampleState, &depthStencilState, &colorBlendState, &dynamicState, m_BlingPhongPipelineLayout, m_BlingPhongPass, 0, nullptr, -1);
             m_BlingPhongPipeline = device.createGraphicsPipeline({}, blingphongPipelineInfo).value;
 
+            //skybox pipeline
+            auto skybox_VertShaderModule = CreateShaderModule("Skybox/Skybox_vert");
+            auto skybox_FragShaderModule = CreateShaderModule("Skybox/Skybox_frag");
+            vk::PipelineShaderStageCreateInfo skybox_VertshaderStage({}, vk::ShaderStageFlagBits::eVertex, skybox_VertShaderModule, "main");
+            vk::PipelineShaderStageCreateInfo skybox_FragshaderStage({}, vk::ShaderStageFlagBits::eFragment, skybox_FragShaderModule, "main");
+
+            vk::PipelineLayoutCreateInfo skybox_LayoutCreateInfo({}, m_MvpAndSamplerSetLayout);
+            m_SkyboxPipelineLayout = device.createPipelineLayout(skybox_LayoutCreateInfo);
+            std::vector<vk::PipelineShaderStageCreateInfo> skybox_ShaderStages{ skybox_VertshaderStage, skybox_FragshaderStage };
+            rasterizationState.setCullMode(vk::CullModeFlagBits::eFront);
+            depthStencilState.setDepthTestEnable(VK_FALSE);
+            depthStencilState.setDepthWriteEnable(VK_FALSE);
+
+            vk::GraphicsPipelineCreateInfo skyboxPipelineInfo({}, skybox_ShaderStages, & vertexInput, & inputAssemblyState, nullptr, & viewportState, & rasterizationState,
+                & multisampleState, & depthStencilState, & colorBlendState, & dynamicState, m_SkyboxPipelineLayout, m_BlingPhongPass, 0, nullptr, -1);
+            m_SkyboxPipeline = device.createGraphicsPipeline({}, skyboxPipelineInfo).value;
+
+            device.destroyShaderModule(skybox_VertShaderModule);
+            device.destroyShaderModule(skybox_FragShaderModule);
+
             device.destroyShaderModule(vertShaderModule);
             device.destroyShaderModule(fragShaderModule);
         }
@@ -227,6 +358,9 @@ namespace mortal
 
         m_UITool.ClearUpUI();
 
+        device.destroyPipeline(m_SkyboxPipeline);
+        device.destroyPipelineLayout(m_SkyboxPipelineLayout);
+
         device.destroyPipeline(m_BlingPhongPipeline);
         device.destroyPipelineLayout(m_BlingPhongPipelineLayout);
         for (auto& framebuffer : m_Framebuffers) {
@@ -238,6 +372,10 @@ namespace mortal
         device.destroyDescriptorSetLayout(m_MvpAndSamplerSetLayout);
         device.destroyDescriptorPool(m_DescriptorPool);
 
+        device.unmapMemory(m_SkyboxMvpMemory);
+        device.freeMemory(m_SkyboxMvpMemory);
+        device.destroyBuffer(m_SkyboxMvpBuffer);
+
         device.unmapMemory(m_MvpMemory);
         device.freeMemory(m_MvpMemory);
         device.destroyBuffer(m_MvpBuffer);
@@ -246,10 +384,19 @@ namespace mortal
         device.freeMemory(m_DepthImageMemory);
         device.destroyImage(m_DepthImage);
 
+        device.destroySampler(m_SkyboxSampler);
+        device.destroyImageView(m_SkyboxView);
+        device.freeMemory(m_SkyboxMemory);
+        device.destroyImage(m_SkyboxTexture);
+
         device.destroySampler(m_TextureSampler);
         device.destroyImageView(m_TextureImageView);
         device.freeMemory(m_TextureImageMemory);
         device.destroyImage(m_TextureImage);
+
+        device.freeMemory(m_SkyboxVertexIndexMemory);
+        device.destroyBuffer(m_SkyboxIndexBuffer);
+        device.destroyBuffer(m_SkyboxVertexBuffer);
 
         device.freeMemory(m_VertexIndexMemory);
         device.destroyBuffer(m_IndexBuffer);
@@ -264,7 +411,11 @@ namespace mortal
             auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
             mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f)) *
                 glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            mvp.view = m_RenderingInfo.m_Camera.GetView();
             memcpy(m_MvpData, &mvp, sizeof(mvp));
+
+            skyboxMvp.view = glm::mat4(glm::mat3(mvp.view));
+            memcpy(m_SkyboxMvpData, &skyboxMvp, sizeof(skyboxMvp));
         }
 
         auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
@@ -281,8 +432,16 @@ namespace mortal
 
         drawCmd.setViewport(0, { vk::Viewport(0, 0, extent2D.width, extent2D.height, 0.0f, 1.0f)});
         drawCmd.setScissor(0, { vk::Rect2D({0, 0}, extent2D)});
-        drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_BlingPhongPipeline);
 
+        //skybox
+        drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_SkyboxPipeline);
+        drawCmd.bindVertexBuffers(0, { m_SkyboxVertexBuffer }, {0});
+        drawCmd.bindIndexBuffer(m_SkyboxIndexBuffer, 0, vk::IndexType::eUint32);
+        drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_SkyboxPipelineLayout, 0, m_SkyboxDescriptorSets, {});
+        drawCmd.drawIndexed(m_SkyboxModel.indeices.size(), 1, 0, 0, 0);
+
+        //bling phong
+        drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_BlingPhongPipeline);
         drawCmd.bindVertexBuffers(0, { m_VertexBuffer }, {0});
         drawCmd.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
 

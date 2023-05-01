@@ -66,7 +66,7 @@ namespace mortal{
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
         m_window = glfwCreateWindow(m_createInfo.width, m_createInfo.height, "Mortal", nullptr, nullptr);
         glfwSetWindowUserPointer(m_window, &m_createInfo);
-
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_CAPTURED);
         glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
                 auto data = reinterpret_cast<WindowCreateInfo*>(glfwGetWindowUserPointer(window));
                 data->width = width;

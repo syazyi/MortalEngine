@@ -6,10 +6,13 @@
 #include "Rendering/Part/Triangle/triangle.h"
 #include "Rendering/Part/BlingPhong/blingphong.h"
 #include "Rendering/Part/UI/ui.h"
+#include "Core/Events/WindowEvent.h"
 namespace mortal
 {
     void RenderingSystem::OnUpdate()
     {
+        CameraMove();
+
         auto& device = m_Info.device.GetDevice();
         auto& currentFrame = m_Info.CurrentFrame;
         auto result_waitFence = device.waitForFences(m_Synchronizations.m_FrameFences[currentFrame], VK_TRUE, UINT64_MAX);
@@ -43,6 +46,14 @@ namespace mortal
 
     void RenderingSystem::OnEvent(Event& e)
     {
+        if (e.GetType() == EventType::EMouseMoved && glfwGetMouseButton(m_Info.window.GetWindow(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+            auto& event = reinterpret_cast<MouseMovedEvent&>(e);
+            m_Info.m_Camera.SetFrontWithMousePos(event.GetXPos(), event.GetYPos());
+            //MORTAL_LOG_INFO("{0}", e);
+        }
+        if (glfwGetMouseButton(m_Info.window.GetWindow(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+            m_Info.m_Camera.firstMouse = true;
+        }
 
     }
 
@@ -188,6 +199,19 @@ namespace mortal
         //AddRenderPart(new TrianglePart(m_Info));
         //AddRenderPart(new UI(m_Info));
         AddRenderPart(new BlingPhong(m_Info));
+    }
+
+    void RenderingSystem::CameraMove()
+    {
+        auto* window = m_Info.window.GetWindow();
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            m_Info.m_Camera.m_Pos += m_Info.m_Camera.m_Speed * m_Info.m_Camera.m_Front;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            m_Info.m_Camera.m_Pos -= m_Info.m_Camera.m_Speed * m_Info.m_Camera.m_Front;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            m_Info.m_Camera.m_Pos -= glm::normalize(glm::cross(m_Info.m_Camera.m_Front, m_Info.m_Camera.m_Up)) * m_Info.m_Camera.m_Speed;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            m_Info.m_Camera.m_Pos += glm::normalize(glm::cross(m_Info.m_Camera.m_Front, m_Info.m_Camera.m_Up)) * m_Info.m_Camera.m_Speed;
     }
 
 } // namespace mortal
