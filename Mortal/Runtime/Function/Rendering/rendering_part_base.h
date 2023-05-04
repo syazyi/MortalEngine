@@ -22,6 +22,20 @@ namespace mortal
         std::vector<uint32_t> indeices;
     };
 
+    struct PrepareModelInfo
+    {
+        LoadedModelInfo modelInfo;
+        vk::Buffer vertexBuffer;
+        vk::Buffer indexBuffer;
+        vk::DeviceMemory vertexMemory;
+    };
+
+    struct PrepareUniformInfo {
+        vk::Buffer uniformBuffer;
+        vk::DeviceMemory uniformMemory;
+        void* mapped;
+    };
+
     class RenderPartBase {
     public:
         RenderPartBase(RenderingSystemInfo& info);
@@ -39,6 +53,22 @@ namespace mortal
         vk::Image CreateImageExclusive();
         vk::DeviceMemory CreateMemoryAndBind_Image(vk::Image& image, vk::MemoryPropertyFlags flags);
         vk::ShaderModule CreateShaderModule(const std::string& fileName);
+
+        //if this function is used  , Prepare for a decrease in flexibility
+        PrepareModelInfo PrepareModel(const std::string& file);
+        void ClearUpPrepareModel(PrepareModelInfo& info);
+
+        //if this function is used  , Prepare for a decrease in flexibility
+        template<typename T>
+        PrepareUniformInfo PrepareUniform() {
+            PrepareUniformInfo  ret;
+            ret.uniformBuffer = CreateBufferExclusive(sizeof(T), vk::BufferUsageFlagBits::eUniformBuffer);
+            ret.uniformMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ ret.uniformBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+            auto device = m_RenderingInfo.device.GetDevice();
+            ret.mapped = device.mapMemory(ret.uniformMemory, 0, sizeof(T));
+            return ret;
+        }
+        void ClearUpPrepareUniform(PrepareUniformInfo& info);
     protected:
         RenderingSystemInfo& m_RenderingInfo;
     };

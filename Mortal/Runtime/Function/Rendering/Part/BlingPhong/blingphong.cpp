@@ -35,7 +35,7 @@ namespace mortal
         auto extent2D = m_RenderingInfo.window.GetExtent2D();
 
         mvp.model = glm::mat4(1.0f);
-        mvp.view = m_RenderingInfo.m_Camera.GetView();
+        mvp.view = m_RenderingInfo.m_Camera.GetView() * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         mvp.proj = glm::perspective(glm::radians(45.f), (float)extent2D.width / (float)extent2D.height, 0.1f, 100.f);
         mvp.proj[1][1] *= -1;
 
@@ -409,9 +409,8 @@ namespace mortal
             static auto start = std::chrono::high_resolution_clock::now();
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
-            mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f)) *
-                glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            mvp.view = m_RenderingInfo.m_Camera.GetView();
+            mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+            mvp.view = m_RenderingInfo.m_Camera.GetView() * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             memcpy(m_MvpData, &mvp, sizeof(mvp));
 
             skyboxMvp.view = glm::mat4(glm::mat3(mvp.view));

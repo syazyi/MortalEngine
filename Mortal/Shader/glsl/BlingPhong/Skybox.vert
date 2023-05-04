@@ -15,10 +15,5 @@ layout(location = 3) in vec2 normal;
 layout(location = 0) out vec3 outtexCoord;
 void main(){
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(position, 1.0);
-    //outtexCoord = vec3(gl_Position);
-	outtexCoord.x = position.y;
-	outtexCoord.y = position.z;
-	outtexCoord.z = -position.x;
-	//outtexCoord.xy *= -1.0;
-	//outtexCoord.x *= -1.0;
+	outtexCoord = position;
 }

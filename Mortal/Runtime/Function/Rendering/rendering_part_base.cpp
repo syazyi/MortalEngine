@@ -85,6 +85,55 @@ namespace mortal
         return vertShaderModule;
     }
 
+    PrepareModelInfo RenderPartBase::PrepareModel(const std::string& file)
+    {
+        PrepareModelInfo ret;
+        auto modelInfo = LoadObjModel(file);
+        auto verteices_size = modelInfo.vertices.size() * sizeof(modelInfo.vertices[0]);
+        auto indices_size = modelInfo.indeices.size() * sizeof(modelInfo.indeices[0]);
+        ret.modelInfo = modelInfo;
+        ret.vertexBuffer = CreateBufferExclusive(verteices_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+        ret.indexBuffer = CreateBufferExclusive(indices_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+        ret.vertexMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ ret.vertexBuffer, ret.indexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        auto stagebuffer = CreateBufferExclusive(verteices_size + indices_size, vk::BufferUsageFlagBits::eTransferSrc);
+        auto stageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ stagebuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+        auto& device = m_RenderingInfo.device.GetDevice();
+        void* data = device.mapMemory(stageMemory, 0, verteices_size);
+        memcpy(data, modelInfo.vertices.data(), verteices_size);
+        device.unmapMemory(stageMemory);
+
+        data = device.mapMemory(stageMemory, verteices_size, indices_size);
+        memcpy(data, modelInfo.indeices.data(), indices_size);
+        device.unmapMemory(stageMemory);
+
+        auto cmd = m_RenderingInfo.command.BeginSingleCommand();
+        cmd.copyBuffer(stagebuffer, ret.vertexBuffer, { vk::BufferCopy(0, 0, verteices_size)});
+        cmd.copyBuffer(stagebuffer, ret.indexBuffer, { vk::BufferCopy(verteices_size, 0, indices_size) });
+
+        m_RenderingInfo.command.EndSingleCommand(cmd, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+        device.freeMemory(stageMemory);
+        device.destroyBuffer(stagebuffer);
+        return ret;
+    }
+
+    void RenderPartBase::ClearUpPrepareModel(PrepareModelInfo& info)
+    {
+        auto& device = m_RenderingInfo.device.GetDevice();
+        device.freeMemory(info.vertexMemory);
+        device.destroyBuffer(info.vertexBuffer);
+        device.destroyBuffer(info.indexBuffer);
+    }
+
+    void RenderPartBase::ClearUpPrepareUniform(PrepareUniformInfo& info)
+    {
+        auto& device = m_RenderingInfo.device.GetDevice();
+        device.unmapMemory(info.uniformMemory);
+        device.freeMemory(info.uniformMemory);
+        device.destroyBuffer(info.uniformBuffer);
+    }
+
     TextureInfo RenderPartBase::LoadTexture(const std::string& file)
     {
         TextureInfo Info;
@@ -137,10 +186,10 @@ namespace mortal
 
                 if (ver_tex_indeies.count(vertex) == 0) {
                     ver_tex_indeies[vertex] = info.vertices.size();
-                    info.vertices.push_back(vertex);
+                    info.vertices.emplace_back(vertex);
                 }
 
-                info.indeices.push_back(ver_tex_indeies[vertex]);
+                info.indeices.emplace_back(ver_tex_indeies[vertex]);
             }
         }
         return info;
