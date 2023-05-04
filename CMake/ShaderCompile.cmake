@@ -7,10 +7,12 @@ function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR 
     foreach(SHADER ${SHADERS})
     # Prepare a header name and a global variable for this shader
         get_filename_component(SHADER_NAME ${SHADER} NAME)
+        get_filename_component(SHADER_DIRECTORY_NAME ${SHADER} DIRECTORY)
+        string(REGEX REPLACE "[0-z]*/" "" DIRECTORY_NAME ${SHADER_DIRECTORY_NAME})
         string(REPLACE "." "_" HEADER_NAME ${SHADER_NAME})
-        string(REGEX REPLACE "_[a-z]*" "" HEADER_FOLDER_NAME ${HEADER_NAME})
+        #string(REGEX REPLACE "_[a-z]*" "" HEADER_FOLDER_NAME ${HEADER_NAME})
 
-        set(SPV_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${GENERATED_DIR}/spv/${HEADER_FOLDER_NAME}/${HEADER_NAME}.spv")
+        set(SPV_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${GENERATED_DIR}/spv/${DIRECTORY_NAME}/${HEADER_NAME}.spv")
 
         add_custom_command(
             OUTPUT ${SPV_FILE}

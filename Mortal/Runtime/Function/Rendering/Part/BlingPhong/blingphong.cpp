@@ -326,8 +326,8 @@ namespace mortal
             m_BlingPhongPipeline = device.createGraphicsPipeline({}, blingphongPipelineInfo).value;
 
             //skybox pipeline
-            auto skybox_VertShaderModule = CreateShaderModule("Skybox/Skybox_vert");
-            auto skybox_FragShaderModule = CreateShaderModule("Skybox/Skybox_frag");
+            auto skybox_VertShaderModule = CreateShaderModule("BlingPhong/Skybox_vert");
+            auto skybox_FragShaderModule = CreateShaderModule("BlingPhong/Skybox_frag");
             vk::PipelineShaderStageCreateInfo skybox_VertshaderStage({}, vk::ShaderStageFlagBits::eVertex, skybox_VertShaderModule, "main");
             vk::PipelineShaderStageCreateInfo skybox_FragshaderStage({}, vk::ShaderStageFlagBits::eFragment, skybox_FragShaderModule, "main");
 

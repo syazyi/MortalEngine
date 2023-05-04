@@ -48,11 +48,9 @@ namespace mortal
             pitch = -89.0f;
 
         glm::vec3 front;
-        //front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        //front.y = -sin(glm::radians(pitch));
-        //front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        front.y = -sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        //front.x = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+        front.x = -cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        front.y = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         front.z = sin(glm::radians(pitch));
         m_Front = glm::normalize(front);
     }

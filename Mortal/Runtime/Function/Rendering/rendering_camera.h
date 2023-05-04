@@ -17,7 +17,7 @@ namespace mortal
 		bool firstMouse{true};
 		float lastX{800.f};
 		float lastY{450.f};
-		float yaw{ 180.0f };
+		float yaw{ 0.0f };
 		float pitch{ 0.0f};
 	};
 } // namespace mortal
