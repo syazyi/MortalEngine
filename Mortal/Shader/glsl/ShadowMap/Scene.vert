@@ -3,6 +3,8 @@ layout(set = 0, binding = 0)uniform UniformBufferObject{
 	mat4 model;
 	mat4 view;
 	mat4 proj;
+	mat4 normal;
+	vec3 lightPos;
 } ubo;
 
 layout(location = 0) in vec3 position;
@@ -17,6 +19,10 @@ layout(location = 3) out vec3 outLightDir;
 layout(location = 4) out vec3 outViewDir;
 layout (location = 5) out vec4 outShadowCoord;
 
+layout(push_constant)uniform LightMatrix{
+	mat4 lightMVP;
+} lightMat;
+
 const mat4 biasMat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
 	0.0, 0.5, 0.0, 0.0,
@@ -24,16 +30,15 @@ const mat4 biasMat = mat4(
 	0.5, 0.5, 0.0, 1.0 );
 
 void main(){
-	gl_Position = ubo.proj * ubo.view * vec4(position, 1.0);
+	gl_Position = ubo.proj * ubo.view * ubo.model * vec4(position, 1.0);
 	fragColor = color;
 	TexCoord_Sample = texCoord;
+	mat3 mv = mat3(ubo.view * ubo.model);
+	outNormal =  mat3(ubo.normal) * normal;
+	vec3 posInView = mv * position;
 
-	mat3 vp = mat3(ubo.proj * ubo.view);
-	outNormal =  vp * normal;
-	vec3 posInView = vp * position;
-
-	vec3 lightPosInView =  mat3(ubo.proj * ubo.view * ubo.model) * vec3(5.0, 5.0, 5.0);
+	vec3 lightPosInView =  mat3(ubo.view) * ubo.lightPos;
 	outLightDir = lightPosInView - posInView;
-	outViewDir = posInView;
-	outShadowCoord = ubo.proj * ubo.view * ubo.model * vec4(vec3(5.0, 5.0, 5.0), 1.0);
+	outViewDir = -posInView;
+	outShadowCoord = biasMat * lightMat.lightMVP * ubo.model * vec4(position, 1.0);
 }

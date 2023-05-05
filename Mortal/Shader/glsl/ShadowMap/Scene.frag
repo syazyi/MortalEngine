@@ -16,8 +16,8 @@ float textureProj(vec4 shadowCoord, vec2 off)
 	float shadow = 1.0;
 	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
 	{
-		float dist = texture( shadowMap, shadowCoord.st + off ).r;
-		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z ) 
+		float dist = texture( shadowMap, shadowCoord.st).r;
+		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - 1e-5 ) 
 		{
 			shadow = 0.1;
 		}
@@ -59,6 +59,7 @@ void main() {
     float shadow = textureProj(inShadowCoord / inShadowCoord.w, vec2(0.0));
 
     vec4 finalColor = vec4((ambientLight + diffuseLight + specularLight) * shadow, 1.0);
-    //vec4 finalColor = vec4(ambientLight + diffuseLight + specularLight, 1.0);
+    //vec4 finalColor = vec4((specularLight + ambientLight), 1.0);
+    //vec4 finalColor = texture( shadowMap, (inShadowCoord / inShadowCoord.w).st);
     outColor = finalColor;
 }

@@ -2,8 +2,6 @@
 
 namespace mortal{
 
-
-
 	ShadowPart::ShadowPart(RenderingSystemInfo& renderinfo) : RenderPartBase(renderinfo), m_UITool(renderinfo)
 	{
 		Init();
@@ -26,8 +24,8 @@ namespace mortal{
 			m_SceneModel = PrepareModel("../../Asset/Model/TestScene.obj");
 			m_MvpInfo = PrepareUniform<MVP>();
 
-			mvp.model = glm::mat4(1.0f);
-			mvp.view = m_RenderingInfo.m_Camera.GetView() * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			mvp.view = m_RenderingInfo.m_Camera.GetView();
 			mvp.proj = glm::perspective(glm::radians(45.f), (float)extent2D.width / (float)extent2D.height, 0.1f, 100.f);
 			mvp.proj[1][1] *= -1;
 
@@ -94,7 +92,7 @@ namespace mortal{
 				vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, 
 				vk::ImageLayout::eUndefined, transitionDepthLayout);
 			vk::AttachmentReference lightDepthAttachRef(0, beUsedDepthLayout);
-			vk::SubpassDescription ligthDepthSubpassDes({}, vk::PipelineBindPoint::eGraphics, {}, {}, {}, &lightDepthAttachRef);
+			vk::SubpassDescription ligthDepthSubpassDes({}, vk::PipelineBindPoint::eGraphics, 0u, {}, 0u, {}, {}, &lightDepthAttachRef);
 
 			std::array<vk::SubpassDependency, 2> ligthDepthSubpassDeps{
 				vk::SubpassDependency(VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eShaderRead, vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::DependencyFlagBits::eByRegion),
@@ -105,7 +103,6 @@ namespace mortal{
 
 			vk::FramebufferCreateInfo ligthDepthFrameBufferCI({}, m_ShadowMapCreatePass, m_LightDepthImageView, ShadowMapWidth, ShadowMapHeight, 1);
 			m_LightDepthFramebuffer = device.createFramebuffer(ligthDepthFrameBufferCI);
-
 
 			vk::AttachmentDescription attachDes_Color({}, m_RenderingInfo.swapchain.GetSurfaceDetail().SurfaceFormats.format, vk::SampleCountFlagBits::e1,
 				vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
@@ -121,6 +118,10 @@ namespace mortal{
 			vk::SubpassDescription sceneSubpass({}, vk::PipelineBindPoint::eGraphics, {}, attachRef_Color, {}, &attachRef_Depth);
 			vk::SubpassDependency subPassDependency(VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput,
 				vk::AccessFlagBits::eNone, vk::AccessFlagBits::eColorAttachmentWrite);
+			//std::array<vk::SubpassDependency, 2> subPassDependencys{
+			//	vk::SubpassDependency(VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eLateFragmentTests, vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::AccessFlagBits::eShaderRead, vk::DependencyFlagBits::eByRegion),
+			//	vk::SubpassDependency(0, VK_SUBPASS_EXTERNAL, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eMemoryWrite, vk::DependencyFlagBits::eByRegion)
+			//};
 			vk::RenderPassCreateInfo sceneRenderPassCI({}, attachDes, sceneSubpass, subPassDependency);
 			m_ScenePass = device.createRenderPass(sceneRenderPassCI);
 
@@ -141,7 +142,10 @@ namespace mortal{
 			vk::PipelineLayoutCreateInfo lightDepthPipelineLayoutCI({}, {}, lightMVPPC);
 			m_ShadowMapPipelineLayout = device.createPipelineLayout(lightDepthPipelineLayoutCI);
 
-			vk::PipelineLayoutCreateInfo scenePipelineLayoutCI({}, m_DescriptorSetLayout, {});
+			std::array<vk::PushConstantRange, 1> lightPushConstants{
+				vk::PushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4)),
+			};
+			vk::PipelineLayoutCreateInfo scenePipelineLayoutCI({}, m_DescriptorSetLayout, lightPushConstants);
 			m_ScenePipelineLayout = device.createPipelineLayout(scenePipelineLayoutCI);
 
 			vk::VertexInputBindingDescription binddes(0, sizeof(Vertex));
@@ -189,9 +193,9 @@ namespace mortal{
 			viewprot = vk::Viewport(0, 0, ShadowMapWidth, ShadowMapHeight, 0.0f, 1.0f);
 			scissor = vk::Rect2D({ 0, 0 }, { ShadowMapWidth , ShadowMapHeight });
 
-			colorBlendState = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy);
 			rasterizationState = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
 				VK_FALSE, {}, {}, {}, 1.0f);
+			//colorBlendState = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy);
 
 			vk::GraphicsPipelineCreateInfo ShadowMapPipelineCI({}, lightVertShaderStage, & vertexInput, & inputAssemblyState, nullptr, & viewportState, & rasterizationState,
 				& multisampleState, & depthStencilState, & colorBlendState, & dynamicState, m_ShadowMapPipelineLayout, m_ShadowMapCreatePass, 0, nullptr, -1);
@@ -244,15 +248,18 @@ namespace mortal{
 			auto end = std::chrono::high_resolution_clock::now();
 			auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
 
-			mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f));
-			auto lightPos = glm::mat3(mvp.model) * glm::vec3(5.0f, 5.0f, 5.0f);
-			auto view = glm::lookAt(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f))
-				* glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-			auto proj = glm::perspective(glm::radians(45.f), (float)ShadowMapWidth / (float)ShadowMapHeight, 0.1f, 100.f);
-			proj[1][1] *= -1;
-			m_LightMVP = proj * view * mvp.model;
+			mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(15.0f, 15.0f, 15.0f);
+			auto lightView = glm::lookAt(mvp.lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			auto lightProj = glm::perspective(glm::radians(45.f), (float)ShadowMapWidth / (float)ShadowMapHeight, 0.1f, 100.f);
+			lightProj[1][1] *= -1;
+			m_LightMVP = lightProj * lightView * mvp.model;
+			lightMVPInScene = lightProj * lightView;
+			
+			//auto debugValue = m_LightMVP * glm::vec4(mvp.lightPos, 1.0f);
 
-			mvp.view = m_RenderingInfo.m_Camera.GetView() * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			mvp.view = m_RenderingInfo.m_Camera.GetView();
+			//mvp.view = glm::lookAt(mvp.lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			mvp.normal = glm::mat3(glm::transpose(glm::inverse(mvp.view * mvp.model)));
 			memcpy(m_MvpInfo.mapped, &mvp, sizeof(mvp));
 		}
 		auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
@@ -261,11 +268,12 @@ namespace mortal{
 
 		drawCmd.begin(vk::CommandBufferBeginInfo{});
 
-		vk::ClearValue depthClear(vk::ClearDepthStencilValue(1.0f, 0));
-		drawCmd.beginRenderPass(vk::RenderPassBeginInfo(m_ShadowMapCreatePass, m_LightDepthFramebuffer, vk::Rect2D({ 0, 0 }, { ShadowMapWidth , ShadowMapHeight }), depthClear), vk::SubpassContents::eInline);
+		std::array<vk::ClearValue, 1> depthClears{};
+		depthClears[0].setDepthStencil({1.0f, 0});
+		drawCmd.beginRenderPass(vk::RenderPassBeginInfo(m_ShadowMapCreatePass, m_LightDepthFramebuffer, vk::Rect2D({ 0, 0 }, { ShadowMapWidth , ShadowMapHeight }), depthClears), vk::SubpassContents::eInline);
+		drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_ShadowMapPipeline);
 		drawCmd.setViewport(0, vk::Viewport(0.0f, 0.0f, ShadowMapWidth, ShadowMapHeight, 0.0f, 1.0f));
 		drawCmd.setScissor(0, vk::Rect2D({ 0, 0 }, { ShadowMapWidth , ShadowMapHeight }));
-		drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_ShadowMapPipeline);
 		drawCmd.bindVertexBuffers(0, m_SceneModel.vertexBuffer, {0});
 		drawCmd.bindIndexBuffer(m_SceneModel.indexBuffer, 0, vk::IndexType::eUint32);
 		drawCmd.pushConstants<glm::mat4>(m_ShadowMapPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, m_LightMVP);
@@ -283,6 +291,7 @@ namespace mortal{
 		drawCmd.bindVertexBuffers(0, m_SceneModel.vertexBuffer, { 0 });
 		drawCmd.bindIndexBuffer(m_SceneModel.indexBuffer, 0, vk::IndexType::eUint32);
 		drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_ScenePipelineLayout, 0, m_DescriptorSets, {});
+		drawCmd.pushConstants<glm::mat4>(m_ScenePipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, lightMVPInScene);
 		drawCmd.drawIndexed(m_SceneModel.modelInfo.indeices.size(), 1, 0, 0, 0);
 		drawCmd.endRenderPass();
 		drawCmd.end();

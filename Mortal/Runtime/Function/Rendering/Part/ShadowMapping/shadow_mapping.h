@@ -13,6 +13,8 @@ namespace mortal
             glm::mat4 model;
             glm::mat4 view;
             glm::mat4 proj;
+            glm::mat4 normal;
+            glm::vec3 lightPos;
         };
 
         ShadowPart(RenderingSystemInfo& renderinfo);
@@ -44,6 +46,7 @@ namespace mortal
         //scene
         PrepareUniformInfo m_MvpInfo;
         MVP mvp;
+        glm::mat4 lightMVPInScene;
 
         vk::Image m_SceneDepthImage;
         vk::ImageView m_SceneDepthImageView;
