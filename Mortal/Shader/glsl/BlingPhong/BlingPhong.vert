@@ -3,6 +3,8 @@ layout(set = 0, binding = 0)uniform UniformBufferObject{
 	mat4 model;
 	mat4 view;
 	mat4 proj;
+	mat4 normalMat;
+	vec3 lightPos;
 } ubo;
 
 layout(location = 0) in vec3 position;
@@ -18,15 +20,19 @@ layout(location = 4) out vec3 outViewDir;
 
 
 void main(){
-	gl_Position = ubo.proj * ubo.view * vec4(position, 1.0);
+	gl_Position = ubo.proj * ubo.view * ubo.model * vec4(position, 1.0);
 	fragColor = color;
 	TexCoord_Sample = texCoord;
 
-	mat3 vp = mat3(ubo.proj * ubo.view);
-	outNormal =  vp * normal;
-	vec3 posInView = vp * position;
+	mat4 mv = ubo.view * ubo.model;
+	vec4 outNormal4 =  ubo.normalMat * vec4(normal, 1.0);
+	outNormal =  outNormal4.xyz / outNormal4.w;
+	vec4 posInView4 = mv * vec4(position, 1.0);
+	posInView4 = posInView4.xyzw / posInView4.w;
 
-	vec3 lightPosInView =  mat3(ubo.proj * ubo.view * ubo.model) * vec3(5.0, 5.0, 5.0);
-	outLightDir = lightPosInView - posInView;
-	outViewDir = posInView;
+	vec4 lightPosInView = ubo.view * vec4(ubo.lightPos, 1.0);
+	lightPosInView = lightPosInView.xyzw / lightPosInView.w;
+	vec3 lightDir = lightPosInView.xyz - posInView4.xyz;
+	outLightDir = lightDir;
+	outViewDir = -posInView4.xyz;
 }

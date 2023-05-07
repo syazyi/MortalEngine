@@ -9,6 +9,8 @@ namespace mortal
             glm::mat4 model;
             glm::mat4 view;
             glm::mat4 proj;
+            glm::mat4 normalMat;
+            glm::vec3 lightPos;
         };
 
         struct BlingPhongMaterial

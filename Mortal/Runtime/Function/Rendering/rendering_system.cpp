@@ -199,8 +199,8 @@ namespace mortal
     {
         //AddRenderPart(new TrianglePart(m_Info));
         //AddRenderPart(new UI(m_Info));
-        //AddRenderPart(new BlingPhong(m_Info));
-        AddRenderPart(new ShadowPart(m_Info));
+        AddRenderPart(new BlingPhong(m_Info));
+        //AddRenderPart(new ShadowPart(m_Info));
     }
 
     void RenderingSystem::CameraMove()
