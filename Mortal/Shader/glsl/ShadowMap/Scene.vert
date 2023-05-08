@@ -33,11 +33,14 @@ void main(){
 	gl_Position = ubo.proj * ubo.view * ubo.model * vec4(position, 1.0);
 	fragColor = color;
 	TexCoord_Sample = texCoord;
-	mat3 mv = mat3(ubo.view * ubo.model);
-	outNormal =  mat3(ubo.normal) * normal;
-	vec3 posInView = mv * position;
+	mat4 mv = ubo.view * ubo.model;
+	vec4 outNormal4 =  ubo.normal * vec4(normal, 1.0);
+	outNormal = outNormal4.xyz / outNormal4.w;
+	vec4 posInView4 = mv * vec4(position, 1.0);
+	vec3 posInView = posInView4.xyz / posInView4.w;
 
-	vec3 lightPosInView =  mat3(ubo.view) * ubo.lightPos;
+	vec4 lightPosInView4 =  ubo.view * vec4(ubo.lightPos, 1.0);
+	vec3 lightPosInView = lightPosInView4.xyz / lightPosInView4.w;
 	outLightDir = lightPosInView - posInView;
 	outViewDir = -posInView;
 	outShadowCoord = biasMat * lightMat.lightMVP * ubo.model * vec4(position, 1.0);

@@ -194,11 +194,12 @@ namespace mortal{
 			scissor = vk::Rect2D({ 0, 0 }, { ShadowMapWidth , ShadowMapHeight });
 
 			rasterizationState = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
-				VK_FALSE, {}, {}, {}, 1.0f);
+				VK_TRUE, {}, {}, {}, 1.0f);
 			//colorBlendState = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy);
-
+			std::vector<vk::DynamicState> shadowDynamicStates{ vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eDepthBias };
+			vk::PipelineDynamicStateCreateInfo shadowDynamicState({}, shadowDynamicStates);
 			vk::GraphicsPipelineCreateInfo ShadowMapPipelineCI({}, lightVertShaderStage, & vertexInput, & inputAssemblyState, nullptr, & viewportState, & rasterizationState,
-				& multisampleState, & depthStencilState, & colorBlendState, & dynamicState, m_ShadowMapPipelineLayout, m_ShadowMapCreatePass, 0, nullptr, -1);
+				& multisampleState, & depthStencilState, & colorBlendState, & shadowDynamicState, m_ShadowMapPipelineLayout, m_ShadowMapCreatePass, 0, nullptr, -1);
 			m_ShadowMapPipeline = device.createGraphicsPipeline({}, ShadowMapPipelineCI).value;
 
 			device.destroyShaderModule(sceneFragShaderModule);
@@ -248,7 +249,8 @@ namespace mortal{
 			auto end = std::chrono::high_resolution_clock::now();
 			auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
 
-			mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(15.0f, 15.0f, 15.0f);
+			//mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(15.0f, 15.0f, 15.0f);
+			mvp.lightPos = glm::vec3(15.0f, 15.0f, 15.0f);
 			auto lightView = glm::lookAt(mvp.lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 			auto lightProj = glm::perspective(glm::radians(45.f), (float)ShadowMapWidth / (float)ShadowMapHeight, 0.1f, 100.f);
 			lightProj[1][1] *= -1;
@@ -259,7 +261,7 @@ namespace mortal{
 
 			mvp.view = m_RenderingInfo.m_Camera.GetView();
 			//mvp.view = glm::lookAt(mvp.lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			mvp.normal = glm::mat3(glm::transpose(glm::inverse(mvp.view * mvp.model)));
+			mvp.normal = glm::transpose(glm::inverse(mvp.view * mvp.model));
 			memcpy(m_MvpInfo.mapped, &mvp, sizeof(mvp));
 		}
 		auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
@@ -274,6 +276,7 @@ namespace mortal{
 		drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_ShadowMapPipeline);
 		drawCmd.setViewport(0, vk::Viewport(0.0f, 0.0f, ShadowMapWidth, ShadowMapHeight, 0.0f, 1.0f));
 		drawCmd.setScissor(0, vk::Rect2D({ 0, 0 }, { ShadowMapWidth , ShadowMapHeight }));
+		drawCmd.setDepthBias(m_BiasConstant, 0.0f, m_BiasSlope);
 		drawCmd.bindVertexBuffers(0, m_SceneModel.vertexBuffer, {0});
 		drawCmd.bindIndexBuffer(m_SceneModel.indexBuffer, 0, vk::IndexType::eUint32);
 		drawCmd.pushConstants<glm::mat4>(m_ShadowMapPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, m_LightMVP);

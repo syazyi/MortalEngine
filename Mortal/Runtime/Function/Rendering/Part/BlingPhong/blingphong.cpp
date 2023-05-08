@@ -410,8 +410,8 @@ namespace mortal
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
 
-            //mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(3.0f, 3.0f, 3.0f);
-            mvp.lightPos = glm::vec3(3.0f, 3.0f, 3.0f);
+            mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(3.0f, 3.0f, 3.0f);
+            //mvp.lightPos = glm::vec3(3.0f, 3.0f, 3.0f);
             mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             mvp.view = m_RenderingInfo.m_Camera.GetView();
             mvp.normalMat = glm::transpose(glm::inverse(mvp.view * mvp.model));
@@ -451,8 +451,6 @@ namespace mortal
         drawCmd.pushConstants<BlingPhongMaterial>(m_BlingPhongPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0u, materialInfo);
         drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_BlingPhongPipelineLayout, 0, m_MvpAndSamplerSets, {});
         drawCmd.drawIndexed(m_ModelInfo.indeices.size(), 1, 0, 0, 0);
-
-
 
         m_UITool.Draw(drawCmd, [&material = materialInfo]() {
             ImGui::ColorEdit3("Light Color", &material.LightColor[0]);

@@ -26,7 +26,8 @@ namespace mortal
         UITool m_UITool;
 
         //offscene render info
-
+        float m_BiasConstant{ 1.25f };
+        float m_BiasSlope{ 1.75f };
         PrepareModelInfo m_SceneModel;
 
         glm::mat4 m_LightMVP;

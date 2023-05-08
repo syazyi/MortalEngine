@@ -11,13 +11,13 @@ layout(location = 0) out vec4 outColor;
 
 layout(set = 0, binding = 1) uniform sampler2D shadowMap;
 
-float textureProj(vec4 shadowCoord, vec2 off)
+float TextureProj(vec4 shadowCoord, vec2 off)
 {
 	float shadow = 1.0;
 	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
 	{
-		float dist = texture( shadowMap, shadowCoord.st).r;
-		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - 1e-5 ) 
+		float dist = texture( shadowMap, shadowCoord.st + off).r;
+		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z) 
 		{
 			shadow = 0.1;
 		}
@@ -25,6 +25,24 @@ float textureProj(vec4 shadowCoord, vec2 off)
 	return shadow;
 }
 
+float FilterPCF(vec4 shadowCoord){
+    ivec2 shadowMapSize = textureSize(shadowMap, 0);
+    float scale = 2.0f;
+    float dx = scale * 1.0f / shadowMapSize.x;
+    float dy = scale * 1.0f / shadowMapSize.y;
+
+    int count = 0;
+    int filterRange = 2;
+    float shadow = 0.0;
+    //(filterRange * 2 + 1) * (filterRange * 2 + 1), find apart scale pixel
+    for(int i = -filterRange; i <= filterRange; i++){
+        for(int j = -filterRange; j <= filterRange; j++){
+            shadow += TextureProj(shadowCoord, vec2(i*dx, j*dy));
+            count++;
+        }        
+    }
+    return shadow / count;
+}
 
 void main() {
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
@@ -56,7 +74,8 @@ void main() {
     specularLight *= attenuation;
 
     //shadow
-    float shadow = textureProj(inShadowCoord / inShadowCoord.w, vec2(0.0));
+    //float shadow = TextureProj(inShadowCoord / inShadowCoord.w, vec2(0.0));
+    float shadow = FilterPCF(inShadowCoord / inShadowCoord.w);
 
     vec4 finalColor = vec4((ambientLight + diffuseLight + specularLight) * shadow, 1.0);
     //vec4 finalColor = vec4((specularLight + ambientLight), 1.0);

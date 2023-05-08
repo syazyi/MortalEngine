@@ -44,7 +44,7 @@ void main() {
     vec3 specularLight = pow(max(dot(N, H), 0), material.q) * material.ks * vec3(material.lightColor);
     specularLight *= attenuation;
 
-    //vec4 finalColor = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texture(TexSampler, TexCoord_Sample);
-    vec4 finalColor = vec4(ambientLight + diffuseLight + specularLight, 1.0);
+    vec4 finalColor = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texture(TexSampler, TexCoord_Sample);
+    //vec4 finalColor = vec4(ambientLight + diffuseLight + specularLight, 1.0);
     outColor = finalColor;
 }
