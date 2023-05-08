@@ -47,7 +47,6 @@ namespace mortal {
 
         //Create Logic Device and Get Queue
         {
-
             std::set<uint32_t> queueIndices{m_Queues.GraphicQueueFamilyIndex.value(),
                m_Queues.PresentQueueFamilyIndex.value()};
 
