@@ -13,6 +13,35 @@ namespace mortal
 
 	}
 
+    void RenderPartBase::PrepareFrame()
+    {
+        auto& device = m_RenderingInfo.device.GetDevice();
+        auto& currentFrame = m_RenderingInfo.CurrentFrame;
+        auto result_waitFence = device.waitForFences(m_RenderingInfo.SemphoreInfo->m_FrameFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+        auto& swapchain = m_RenderingInfo.swapchain.GetSwapChain();
+        auto result_nextImageIndex = device.acquireNextImageKHR(swapchain, UINT64_MAX, m_RenderingInfo.SemphoreInfo->m_GetImageSemaphores[currentFrame]);
+        m_RenderingInfo.nextImageIndex = result_nextImageIndex.value;
+
+        device.resetFences(m_RenderingInfo.SemphoreInfo->m_FrameFences[currentFrame]);
+
+        auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[currentFrame];
+        drawCmd.reset();
+    }
+
+    void RenderPartBase::SubmitQueueSync()
+    {
+        auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
+        auto& drawQueue = m_RenderingInfo.device.GetRenderingQueue().PresentQueue.value();
+
+        std::array<vk::PipelineStageFlags, 1> pipelineStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+        vk::SubmitInfo subInfo(m_RenderingInfo.SemphoreInfo->m_GetImageSemaphores[m_RenderingInfo.CurrentFrame], pipelineStages, drawCmd, m_RenderingInfo.SemphoreInfo->m_PresentSemaphores[m_RenderingInfo.CurrentFrame]);
+        drawQueue.submit(subInfo, m_RenderingInfo.SemphoreInfo->m_FrameFences[m_RenderingInfo.CurrentFrame]);
+                
+        vk::PresentInfoKHR presentInfo(m_RenderingInfo.SemphoreInfo->m_PresentSemaphores[m_RenderingInfo.CurrentFrame], m_RenderingInfo.swapchain.GetSwapChain(), m_RenderingInfo.nextImageIndex);
+        auto result_present = drawQueue.presentKHR(presentInfo);
+    }
+
     std::vector<char> RenderPartBase::LoadShader(const std::string& fileName)
 	{
         auto filePath = "../../Mortal/Shader/generated/spv/" + fileName + ".spv";

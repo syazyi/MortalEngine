@@ -13,6 +13,14 @@
 namespace mortal
 {
     class RenderPartBase;
+
+    struct SynchronizationGlobal
+    {
+        std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
+        std::array<vk::Semaphore, MaxFrameInFlight> m_PresentSemaphores;
+        std::array<vk::Fence, MaxFrameInFlight> m_FrameFences;
+    };
+
     struct RenderingSystemInfo
     {
         RenderingSystemInfo() = default;
@@ -24,14 +32,9 @@ namespace mortal
         uint8_t CurrentFrame{0};
         uint32_t nextImageIndex;
         Camera m_Camera;
+        SynchronizationGlobal* SemphoreInfo;
     };
 
-    struct SynchronizationGlobal
-    {
-        std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
-        std::array<vk::Semaphore, MaxFrameInFlight> m_PresentSemaphores;
-        std::array<vk::Fence, MaxFrameInFlight> m_FrameFences;
-    };
     class MORTAL_API RenderingSystem : public Layer{
     public:
         ~RenderingSystem();
@@ -57,7 +60,6 @@ namespace mortal
         void AddRenderPart(T* part) {
             m_RenderParts.push_back(std::unique_ptr<T>(part));
         }
-
     private:
         RenderingSystem();
 
@@ -92,7 +94,6 @@ namespace mortal
         }
 
         void AddRenderPasses();
-
         void CameraMove();
     private:
         vk::Instance m_Instance;
@@ -100,7 +101,6 @@ namespace mortal
         RenderingSystemInfo m_Info;
         SynchronizationGlobal m_Synchronizations;
         std::vector<std::unique_ptr<RenderPartBase>> m_RenderParts;
-
     };
 
 

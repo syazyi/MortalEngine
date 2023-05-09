@@ -49,7 +49,9 @@ namespace mortal {
         {
             std::set<uint32_t> queueIndices{m_Queues.GraphicQueueFamilyIndex.value(),
                m_Queues.PresentQueueFamilyIndex.value()};
-
+            if constexpr (EnableCompute) {
+                queueIndices.emplace(m_Queues.ComputeQueueFamilyIndex.value());
+            }
             std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
             for (auto& queueIndex : queueIndices) {
                 float queuePriorites = 1.0f;

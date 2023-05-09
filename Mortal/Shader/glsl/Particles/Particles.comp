@@ -1,0 +1,30 @@
+#version 450
+
+struct Particle
+{
+	vec3 pos;
+	vec3 vel;
+};
+
+layout(binding = 0) buffer Pos{
+	Particle particles[];
+};
+
+layout(local_size_x = 256)in;
+
+layout (binding = 1) uniform UBO 
+{
+	float deltaT;
+	float destX;
+	float destY;
+	int particleCount;
+} ubo;
+
+void main(){
+	uint index = gl_GlobalInvocationID.x;
+	// Don't try to write beyond particle count
+    if (index >= ubo.particleCount) {
+		return;	
+	}
+	particles[index].pos = particles[index].pos;
+}

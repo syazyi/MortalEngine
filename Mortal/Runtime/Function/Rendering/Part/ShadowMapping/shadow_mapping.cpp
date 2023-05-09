@@ -244,6 +244,8 @@ namespace mortal{
 
 	void ShadowPart::Draw()
 	{
+		PrepareFrame();
+
 		{
 			static auto start = std::chrono::high_resolution_clock::now();
 			auto end = std::chrono::high_resolution_clock::now();
@@ -298,6 +300,8 @@ namespace mortal{
 		drawCmd.drawIndexed(m_SceneModel.modelInfo.indeices.size(), 1, 0, 0, 0);
 		drawCmd.endRenderPass();
 		drawCmd.end();
+
+		SubmitQueueSync();
 	}
 
 

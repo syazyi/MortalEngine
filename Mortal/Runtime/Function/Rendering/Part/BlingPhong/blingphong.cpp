@@ -405,6 +405,8 @@ namespace mortal
 
     void BlingPhong::Draw()
     {
+        PrepareFrame();
+
         {
             static auto start = std::chrono::high_resolution_clock::now();
             auto end = std::chrono::high_resolution_clock::now();
@@ -465,5 +467,7 @@ namespace mortal
 
         drawCmd.endRenderPass();
         drawCmd.end();
+
+        SubmitQueueSync();
     }
 } // namespace mortal

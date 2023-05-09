@@ -16,7 +16,7 @@ namespace mortal
 
 
 
-    constexpr bool EnableCompute = false;
+    constexpr bool EnableCompute = true;
 
     constexpr uint8_t MaxFrameInFlight = 2;
 

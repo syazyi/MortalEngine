@@ -386,7 +386,7 @@ namespace mortal
 
     void mortal::TrianglePart::Draw()
     {
-
+        PrepareFrame();
         //Record Draw Cmd
         {
             auto& drawCmd = m_RenderingInfo.command.GetCommandBuffers()[m_RenderingInfo.CurrentFrame];
@@ -434,6 +434,8 @@ namespace mortal
                 glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             memcpy(m_MVPData, &mvp, sizeof(mvp));
         }
+
+        SubmitQueueSync();
     }
 
 } // namespace mortal

@@ -7,6 +7,7 @@
 #include "Rendering/Part/BlingPhong/blingphong.h"
 #include "Rendering/Part/UI/ui.h"
 #include "Rendering/Part/ShadowMapping/shadow_mapping.h"
+#include "Rendering/Part/Particles/particles.h"
 #include "Core/Events/WindowEvent.h"
 namespace mortal
 {
@@ -14,34 +15,11 @@ namespace mortal
     {
         CameraMove();
 
-        auto& device = m_Info.device.GetDevice();
-        auto& currentFrame = m_Info.CurrentFrame;
-        auto result_waitFence = device.waitForFences(m_Synchronizations.m_FrameFences[currentFrame], VK_TRUE, UINT64_MAX);
-
-        auto& swapchain = m_Info.swapchain.GetSwapChain();
-        auto result_nextImageIndex = device.acquireNextImageKHR(swapchain, UINT64_MAX, m_Synchronizations.m_GetImageSemaphores[currentFrame]);
-        m_Info.nextImageIndex = result_nextImageIndex.value;
-
-        device.resetFences(m_Synchronizations.m_FrameFences[currentFrame]);
-
-        auto& drawCmd = m_Info.command.GetCommandBuffers()[currentFrame];
-        drawCmd.reset();
-
-
         for (auto& pass : m_RenderParts) {
             pass->Draw();
         }
 
-        auto& drawQueue = m_Info.device.GetRenderingQueue().PresentQueue.value();
-
-        std::array<vk::PipelineStageFlags, 1> pipelineStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
-        vk::SubmitInfo subInfo(m_Synchronizations.m_GetImageSemaphores[currentFrame], pipelineStages, drawCmd, m_Synchronizations.m_PresentSemaphores[currentFrame]);
-        drawQueue.submit(subInfo, m_Synchronizations.m_FrameFences[currentFrame]);
-
-        vk::PresentInfoKHR presentInfo(m_Synchronizations.m_PresentSemaphores[currentFrame], swapchain, m_Info.nextImageIndex);
-        auto result_present = drawQueue.presentKHR(presentInfo);
-
-        currentFrame = (currentFrame + 1) % MaxFrameInFlight;
+        m_Info.CurrentFrame = (m_Info.CurrentFrame + 1) % MaxFrameInFlight;
 
     }
 
@@ -88,6 +66,7 @@ namespace mortal
                 m_Synchronizations.m_FrameFences[i] = device.createFence(fCreateInfo);
             }
         }
+        m_Info.SemphoreInfo = &m_Synchronizations;
     }
 
     void RenderingSystem::ClearUpVulkan()
@@ -200,7 +179,8 @@ namespace mortal
         //AddRenderPart(new TrianglePart(m_Info));
         //AddRenderPart(new UI(m_Info));
         //AddRenderPart(new BlingPhong(m_Info));
-        AddRenderPart(new ShadowPart(m_Info));
+        //AddRenderPart(new ShadowPart(m_Info));
+        AddRenderPart(new ParticlesPart(m_Info));
     }
 
     void RenderingSystem::CameraMove()
