@@ -3,7 +3,8 @@
 #include "ParticleSystem/particleInfo.h"
 namespace mortal
 {
-    static constexpr uint32_t ParticlesCount = 256 * 1024;
+    static constexpr uint32_t ParticelsPatchCount = 256;
+    static constexpr uint32_t ParticlesCount = ParticelsPatchCount * 1024;
     class ParticlesPart : public RenderPartBase {
     public:
         struct computeUBO {							// Compute shader uniform block object

@@ -20,11 +20,30 @@ layout (binding = 1) uniform UBO
 	int particleCount;
 } ubo;
 
+float rand(vec2 co){
+	float ZtoO = fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+	ZtoO = ZtoO * 2.0 - 1.0;
+    return ZtoO;
+}
+
+float f(float x){
+	return x;
+}
+
+float f2(float x){
+	return x * x;
+}
+
+float f3(float x){
+	return pow(x, 3);
+}
 void main(){
-	uint index = gl_GlobalInvocationID.x;
+	uint Xindex = gl_GlobalInvocationID.x;
 	// Don't try to write beyond particle count
-    if (index >= ubo.particleCount) {
+    if (Xindex >= ubo.particleCount) {
 		return;	
 	}
-	particles[index].pos = particles[index].pos;
+
+	float RandomValue = rand(particles[Xindex].pos.xy * particles[Xindex].pos.z);
+	particles[Xindex].pos = vec3(sin(particles[Xindex].pos.x + 0.01 * f(RandomValue)) * 2.0, sin(particles[Xindex].pos.y + 0.001 * f2(RandomValue)) * 2.0, sin(particles[Xindex].pos.z + 0.01 * f3(RandomValue))) * 2.0;
 }

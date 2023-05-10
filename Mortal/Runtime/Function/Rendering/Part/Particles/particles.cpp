@@ -42,6 +42,8 @@ namespace mortal
             device.unmapMemory(stageBufferMemory);
 
             m_CurrentParticlesUBO = PrepareUniform<computeUBO>();
+            m_CurrentParticlesUBOData.particleCount = ParticlesCount;
+            memcpy(m_CurrentParticlesUBO.mapped, &m_CurrentParticlesUBOData, sizeof(computeUBO));
             //Prepare Command 
             vk::CommandPoolCreateInfo computeCommandPoolCI(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, computeIndex);
             m_ComputeCommandPool = device.createCommandPool(computeCommandPoolCI);
@@ -234,10 +236,10 @@ namespace mortal
             auto rasterizationState = vk::PipelineRasterizationStateCreateInfo({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
                 VK_FALSE, {}, {}, {}, 1.0f);
             auto multisampleState = vk::PipelineMultisampleStateCreateInfo({}, vk::SampleCountFlagBits::e1, VK_FALSE);
-            auto depthStencilState = vk::PipelineDepthStencilStateCreateInfo({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE);
+            auto depthStencilState = vk::PipelineDepthStencilStateCreateInfo({}, 0, 0, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE);
 
-            vk::PipelineColorBlendAttachmentState state(VK_FALSE, vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
-                vk::BlendFactor::eZero, vk::BlendFactor::eOne, vk::BlendOp::eAdd,
+            vk::PipelineColorBlendAttachmentState state(VK_TRUE, vk::BlendFactor::eOne, vk::BlendFactor::eOne, vk::BlendOp::eAdd,
+                vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eDstAlpha, vk::BlendOp::eAdd,
                 vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
             auto colorBlendState = vk::PipelineColorBlendStateCreateInfo({}, VK_FALSE, vk::LogicOp::eCopy, state);
 
@@ -310,7 +312,7 @@ namespace mortal
             Cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
             Cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_ParticlesPipeline);
             Cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_ParticlesPipelineLayout, 0, m_ParticlesDescriptorSets, {});
-            Cmd.dispatch(ParticlesCount / 256, 1, 1);
+            Cmd.dispatch(ParticlesCount / ParticelsPatchCount, 1, 1);
             Cmd.end();
 
             std::array<vk::Semaphore, 1> computeWaitSemaphores{ m_GraphicToCompute };
@@ -332,7 +334,7 @@ namespace mortal
             auto extent2D = m_RenderingInfo.window.GetExtent2D();
             Cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
             std::array<vk::ClearValue, 2> clearVaules{
-                vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}), 
+                vk::ClearColorValue(std::array<float, 4>{0.025f, 0.025f, 0.025f, 1.0f}),
                 vk::ClearDepthStencilValue(1.0f, 1)
             };
             Cmd.beginRenderPass(vk::RenderPassBeginInfo(m_RenderPass, m_Framebuffers[m_RenderingInfo.nextImageIndex], vk::Rect2D({}, extent2D), clearVaules),

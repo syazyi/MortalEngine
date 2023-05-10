@@ -12,7 +12,7 @@ namespace mortal
 		glm::vec3 m_Front{ -1.0f, 0.0f, 0.0f };
 		glm::vec3 m_Pos{ 5.0f, 0.0f, 0.0f };
 		glm::vec3 m_Up{ 0.0f, 0.0f, 1.0f };
-		float m_Speed{0.1f};
+		float m_Speed{0.005f};
 
 		bool firstMouse{true};
 		float lastX{800.f};

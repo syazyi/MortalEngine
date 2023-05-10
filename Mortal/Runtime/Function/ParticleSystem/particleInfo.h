@@ -4,8 +4,8 @@ namespace mortal
 {
 	struct ParticlesInfo
 	{
-		glm::vec3 Position;
-		glm::vec3 Velocity;
+		alignas(0) glm::vec3 Position; 
+		alignas(16) glm::vec3 Velocity; 
 	};
     
     
