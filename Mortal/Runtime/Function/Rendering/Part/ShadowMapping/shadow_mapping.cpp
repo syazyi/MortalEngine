@@ -252,9 +252,9 @@ namespace mortal{
 			auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
 
 			//mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(15.0f, 15.0f, 15.0f);
-			mvp.lightPos = glm::vec3(15.0f, 15.0f, 15.0f);
+			mvp.lightPos = glm::vec3(5.0f, 5.0f, 5.0f);
 			auto lightView = glm::lookAt(mvp.lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			auto lightProj = glm::perspective(glm::radians(45.f), (float)ShadowMapWidth / (float)ShadowMapHeight, 0.1f, 100.f);
+			auto lightProj = glm::perspective(glm::radians(60.f), (float)ShadowMapWidth / (float)ShadowMapHeight, 0.1f, 100.f);
 			lightProj[1][1] *= -1;
 			m_LightMVP = lightProj * lightView * mvp.model;
 			lightMVPInScene = lightProj * lightView;
