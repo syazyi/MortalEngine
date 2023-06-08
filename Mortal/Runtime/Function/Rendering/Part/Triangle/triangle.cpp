@@ -1,4 +1,5 @@
 #include "triangle.h"
+#include "Rendering/rendering_camera.h"
 
 namespace mortal
 {
@@ -21,21 +22,44 @@ namespace mortal
         // Set Buffer and Memory
         {
         //Set data
-            //auto ObjInfo = LoadObjModel("../../Asset/Model/frog.obj");
-            auto ObjInfo = LoadObjModel("../../Asset/Model/cube.obj");
+            Vertex v1;
+            v1.Position = glm::vec3(0.0f, -0.5f, 0.0f);
+            v1.Color = glm::vec3(255.0f, 255.0f, 255.0f);
+            v1.Normal = glm::vec3(1.0f, 0.0f, 0.0f);
+            v1.TexCoord = glm::vec2(0.0f, 0.0f);
 
-            Test_Vertices = ObjInfo.vertices;
-            Test_Indices = ObjInfo.indeices;
+            Vertex v2;
+            v2.Position = glm::vec3(0.0f, 0.5f, 0.0f);
+            v2.Color = glm::vec3(255.0f, 255.0f, 255.0f);
+            v2.Normal = glm::vec3(1.0f, 0.0f, 0.0f);
+            v2.TexCoord = glm::vec2(1.0f, 0.0f);
+
+            Vertex v3;
+            v3.Position = glm::vec3(0.0f, 0.0f, 1.0f);
+            v3.Color = glm::vec3(255.0f, 255.0f, 255.0f);
+            v3.Normal = glm::vec3(1.0f, 0.0f, 0.0f);
+            v3.TexCoord = glm::vec2(0.5f, 1.0f);
+
+            std::vector<Vertex> vertices = {
+                v1, v2, v3
+            };
+
+            std::vector<IndexType> indices = {
+                0, 1, 2
+            };
+            Test_Vertices = vertices;
+            Test_Indices = indices;
 
             mvp.Model = glm::mat4(1.0f);
-            mvp.View = glm::lookAt(glm::vec3{ 5.0f, 5.0f, 5.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{0.0f, 0.0f, 1.0f});
+            //mvp.View = glm::lookAt(glm::vec3{ 5.0f, 5.0f, 5.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{0.0f, 0.0f, 1.0f});
+            mvp.View = m_RenderingInfo.m_Camera.GetView();
             mvp.Project = glm::perspective(glm::radians(45.f), (float)extent2d.width / (float) extent2d.height, 0.1f, 100.f);
             mvp.Project[1][1] *= -1;
 
             TextureInfo textureInfo = LoadTexture("NahidaClip.png");
         //set buffer and memory
             auto vertex_size = sizeof(Vertex) * Test_Vertices.size();
-            auto index_size = sizeof(uint32_t) * Test_Indices.size();
+            auto index_size = sizeof(IndexType) * Test_Indices.size();
 
             vk::BufferCreateInfo VertexBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
             m_VertexBuffer = device.createBuffer(VertexBufferCI);
@@ -45,12 +69,6 @@ namespace mortal
 
             m_VertexIndexMemroy = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBuffer, m_IndexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
             
-            //add Second Triangle
-            //vk::BufferCreateInfo VertexBufferSecondCI({}, vertex_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
-            //m_VertexBufferSecond = device.createBuffer(VertexBufferSecondCI);
-
-            //m_VertexSecondMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ m_VertexBufferSecond }, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
             //Set UniformBuffer
             auto mvp_size = sizeof(mvp);
             vk::BufferCreateInfo createInfo({}, mvp_size, vk::BufferUsageFlagBits::eUniformBuffer, vk::SharingMode::eExclusive);
@@ -65,7 +83,7 @@ namespace mortal
                 vk::BufferCreateInfo StageBufferCI({}, vertex_size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
                 vk::Buffer StageBuffer = device.createBuffer(StageBufferCI);
 
-                auto StageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{StageBuffer},
+                auto StageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ StageBuffer },
                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
                 void* data = device.mapMemory(StageMemory, 0, vertex_size);
@@ -77,19 +95,8 @@ namespace mortal
                 SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBuffer, vertexBC);
                 m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
 
-
-                //Second
-                //data = device.mapMemory(StageMemory, 0, vertex_size);
-                //memcpy(data, Test_Vertices_Second.data(), vertex_size);
-                //device.unmapMemory(StageMemory);
-
-                //SingleCmdBuffer = m_RenderingInfo.command.BeginSingleCommand();
-                //SingleCmdBuffer.copyBuffer(StageBuffer, m_VertexBufferSecond, vertexBC);
-                //m_RenderingInfo.command.EndSingleCommand(SingleCmdBuffer, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
-
                 device.freeMemory(StageMemory);
                 device.destroyBuffer(StageBuffer);
-
             }
             
             //Copy Index Buffer
@@ -113,7 +120,7 @@ namespace mortal
                 device.destroyBuffer(StageBuffer);
             }
 
-            //Set Texture Image
+            //Set Texture Image And Copy (important)
             {
                 vk::ImageCreateInfo createInfo({}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Srgb, vk::Extent3D(textureInfo.texWidth, textureInfo.texHeight, 1.0f), 1, 1, vk::SampleCountFlagBits::e1, 
                     vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive, {},
@@ -124,8 +131,8 @@ namespace mortal
 
                 vk::BufferCreateInfo StagebufferInfo({}, textureInfo.dataSize, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
                 auto stageBuffer = device.createBuffer(StagebufferInfo);
-
                 auto stageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ stageBuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
                 void* textureData = device.mapMemory(stageMemory, 0, textureInfo.dataSize);
                 memcpy(textureData, textureInfo.data, textureInfo.dataSize);
                 device.unmapMemory(stageMemory);
@@ -178,7 +185,6 @@ namespace mortal
                 vk::ImageViewCreateInfo depthIVCreateInfo({}, m_DepthImage, vk::ImageViewType::e2D, depthFormat,
                     vk::ComponentMapping(), vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
                 m_DepthImageView = device.createImageView(depthIVCreateInfo);
-
             }
 
             //Set DesCriptorSetLayout
@@ -285,10 +291,13 @@ namespace mortal
             auto bCodeVert = LoadShader("triangle/triangle_vert");
             vk::ShaderModuleCreateInfo vertCreateInfo({}, bCodeVert.size(), reinterpret_cast<uint32_t*>(bCodeVert.data()));
             m_VertexShaderModule = device.createShaderModule(vertCreateInfo);
+            //-------m_VertexShaderModule = CreateShaderModule("triangle/triangle_vert");
+
 
             auto bCodeFrag = LoadShader("triangle/triangle_frag");
             vk::ShaderModuleCreateInfo fragCreateInfo({}, bCodeFrag.size(), reinterpret_cast<uint32_t*>(bCodeFrag.data()));
             m_FragmentShaderModule = device.createShaderModule(fragCreateInfo);
+            //-------m_FragmentShaderModule = CreateShaderModule("triangle/triangle_frag");
         }
 
         //create pipeline
@@ -414,12 +423,8 @@ namespace mortal
 
             drawCmd.bindVertexBuffers(0, m_VertexBuffer, {0});
             drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout, 0, m_TriangleDesCriptorSets, {});
-            drawCmd.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
-
+            drawCmd.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
             drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
-            
-            //drawCmd.bindVertexBuffers(0, m_VertexBufferSecond, {0});
-            //drawCmd.drawIndexed(Test_Indices.size(), 1, 0, 0, 0);
 
             drawCmd.endRenderPass();
             drawCmd.end();
@@ -427,11 +432,7 @@ namespace mortal
 
         //Updata MVP
         {
-            static auto start = std::chrono::high_resolution_clock::now();
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration<float, std::chrono::seconds::period>(end - start).count();
-            mvp.Model = glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f)) * 
-                glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            mvp.View = m_RenderingInfo.m_Camera.GetView();
             memcpy(m_MVPData, &mvp, sizeof(mvp));
         }
 

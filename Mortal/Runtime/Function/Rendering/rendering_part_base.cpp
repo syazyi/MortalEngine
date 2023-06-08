@@ -42,6 +42,11 @@ namespace mortal
         auto result_present = drawQueue.presentKHR(presentInfo);
     }
 
+    glm::mat4 RenderPartBase::GetBlendCorrectionModelMat()
+    {
+        return glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    }
+
     std::vector<char> RenderPartBase::LoadShader(const std::string& fileName)
 	{
         auto filePath = "../../Mortal/Shader/generated/spv/" + fileName + ".spv";

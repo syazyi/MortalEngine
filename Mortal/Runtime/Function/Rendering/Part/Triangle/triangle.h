@@ -4,6 +4,8 @@ namespace mortal
 {
     class TrianglePart : public RenderPartBase {
     public:
+        using IndexType = uint16_t;
+
         struct UBO
         {
             glm::mat4 Model;
@@ -57,8 +59,7 @@ namespace mortal
 
         //data
         std::vector<Vertex> Test_Vertices;
-        std::vector<Vertex> Test_Vertices_Second;
-        std::vector<uint32_t> Test_Indices;
+        std::vector<uint16_t> Test_Indices;
         UBO mvp;
 
         //Des

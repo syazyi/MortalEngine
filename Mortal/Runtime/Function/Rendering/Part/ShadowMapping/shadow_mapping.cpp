@@ -24,7 +24,7 @@ namespace mortal{
 			m_SceneModel = PrepareModel("../../Asset/Model/TestScene.obj");
 			m_MvpInfo = PrepareUniform<MVP>();
 
-			mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			mvp.model = GetBlendCorrectionModelMat();
 			mvp.view = m_RenderingInfo.m_Camera.GetView();
 			mvp.proj = glm::perspective(glm::radians(45.f), (float)extent2D.width / (float)extent2D.height, 0.1f, 100.f);
 			mvp.proj[1][1] *= -1;
@@ -50,7 +50,6 @@ namespace mortal{
 			vk::ImageViewCreateInfo sceneImageViewCreateInfo({}, m_SceneDepthImage, vk::ImageViewType::e2D, depthFormatInfo.first,
 				vk::ComponentMapping(), vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
 			m_SceneDepthImageView = device.createImageView(sceneImageViewCreateInfo);
-
 		}
 
 		//Prepare descriptor 

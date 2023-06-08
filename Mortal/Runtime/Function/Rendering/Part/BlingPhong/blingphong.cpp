@@ -34,13 +34,13 @@ namespace mortal
         //mvp
         auto extent2D = m_RenderingInfo.window.GetExtent2D();
 
-        mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        mvp.model = GetBlendCorrectionModelMat();
         mvp.view = m_RenderingInfo.m_Camera.GetView();
         mvp.proj = glm::perspective(glm::radians(45.f), (float)extent2D.width / (float)extent2D.height, 0.1f, 100.f);
         mvp.proj[1][1] *= -1;
 
         //skybox mvp
-        skyboxMvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        skyboxMvp.model = GetBlendCorrectionModelMat();
         skyboxMvp.view = glm::mat4(glm::mat3(mvp.view));
         //skyboxMvp.view = mvp.view;
         skyboxMvp.proj = mvp.proj;
@@ -414,7 +414,7 @@ namespace mortal
 
             mvp.lightPos = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(duration * 90.f), glm::vec3(0.0f, 0.0f, 1.0f))) * glm::vec3(3.0f, 3.0f, 3.0f);
             //mvp.lightPos = glm::vec3(3.0f, 3.0f, 3.0f);
-            mvp.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            mvp.model = GetBlendCorrectionModelMat();
             mvp.view = m_RenderingInfo.m_Camera.GetView();
             mvp.normalMat = glm::transpose(glm::inverse(mvp.view * mvp.model));
             memcpy(m_MvpData, &mvp, sizeof(mvp));

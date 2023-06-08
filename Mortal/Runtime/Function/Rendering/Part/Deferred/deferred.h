@@ -23,6 +23,18 @@ namespace mortal
 
         PrepareUniformInfo m_ModelUBO;
         ModelUBO m_ModelUBOData;
+
+        //Descriptor
+        vk::DescriptorPool m_DescriptorPool;
+        vk::DescriptorSetLayout m_DescriptorSetLayout;
+        std::vector<vk::DescriptorSet> m_PresentDescriptorSets;
+        //RenderPass 
+        vk::RenderPass m_PresentRenderPass;
+        std::vector<vk::Framebuffer> m_PresentFrameBuffers;
+
+        //Pipeline
+        vk::PipelineLayout m_PresentPipelineLayout;
+        vk::Pipeline m_PresentPipeline;
     };
 
 

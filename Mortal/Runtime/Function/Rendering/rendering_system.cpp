@@ -5,7 +5,6 @@
 #include "rendering_part_base.h"
 #include "Rendering/Part/Triangle/triangle.h"
 #include "Rendering/Part/BlingPhong/blingphong.h"
-#include "Rendering/Part/UI/ui.h"
 #include "Rendering/Part/ShadowMapping/shadow_mapping.h"
 #include "Rendering/Part/Particles/particles.h"
 #include "Core/Events/WindowEvent.h"
@@ -176,11 +175,11 @@ namespace mortal
 
     void RenderingSystem::AddRenderPasses()
     {
-        //AddRenderPart(new TrianglePart(m_Info));
+        AddRenderPart(new TrianglePart(m_Info));
         //AddRenderPart(new UI(m_Info));
         //AddRenderPart(new BlingPhong(m_Info));
         //AddRenderPart(new ShadowPart(m_Info));
-        AddRenderPart(new ParticlesPart(m_Info));
+        //AddRenderPart(new ParticlesPart(m_Info));
     }
 
     void RenderingSystem::CameraMove()

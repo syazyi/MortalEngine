@@ -48,6 +48,8 @@ namespace mortal
         void PrepareFrame();
         void SubmitQueueSync();
 
+        glm::mat4 GetBlendCorrectionModelMat();
+
         std::vector<char> LoadShader(const std::string& fileName);
         TextureInfo LoadTexture(const std::string& file);
         LoadedModelInfo LoadObjModel(const std::string& file);
