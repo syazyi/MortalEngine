@@ -33,6 +33,8 @@ namespace mortal
         uint32_t nextImageIndex;
         Camera m_Camera;
         SynchronizationGlobal* SemphoreInfo;
+
+        vk::DescriptorPool DescriptorPool;
     };
 
     class MORTAL_API RenderingSystem : public Layer{

@@ -66,6 +66,22 @@ namespace mortal
             }
         }
         m_Info.SemphoreInfo = &m_Synchronizations;
+
+        {
+            auto& device = m_Info.device.GetDevice();
+            
+            std::vector<vk::DescriptorPoolSize> poolsizes;
+            poolsizes.reserve(3);
+            poolsizes.emplace_back(vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer, 128});
+            poolsizes.emplace_back(vk::DescriptorPoolSize{vk::DescriptorType::eUniformBufferDynamic, 128});
+            poolsizes.emplace_back(vk::DescriptorPoolSize{vk::DescriptorType::eCombinedImageSampler, 128});
+            uint32_t maxsets = 0;
+            for (auto& poolsize : poolsizes) {
+                maxsets += poolsize.descriptorCount;
+            }
+            m_Info.DescriptorPool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo{ {}, maxsets, poolsizes });
+
+        }
     }
 
     void RenderingSystem::ClearUpVulkan()
