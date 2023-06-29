@@ -1,3 +1,4 @@
+#pragma once 
 #include "rendering.h"
 namespace mortal
 {

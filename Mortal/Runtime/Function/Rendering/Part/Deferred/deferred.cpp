@@ -2,7 +2,7 @@
 
 namespace mortal
 {
-    DeferredPart::DeferredPart(RenderingSystemInfo& info) : RenderPartBase(info)
+    DeferredPart::DeferredPart(VulkanContext& info) : RenderPartBase(info)
     {
         Init();
     }

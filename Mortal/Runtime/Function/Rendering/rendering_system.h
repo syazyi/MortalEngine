@@ -10,32 +10,10 @@
 #include "rendering_swapchain.h"
 #include "rendering_command.h"
 #include "rendering_camera.h"
+#include "Rendering/RHI/vulkan_rhi.hpp"
 namespace mortal
 {
     class RenderPartBase;
-
-    struct SynchronizationGlobal
-    {
-        std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
-        std::array<vk::Semaphore, MaxFrameInFlight> m_PresentSemaphores;
-        std::array<vk::Fence, MaxFrameInFlight> m_FrameFences;
-    };
-
-    struct RenderingSystemInfo
-    {
-        RenderingSystemInfo() = default;
-        RenderingSwapChain swapchain;
-        RenderCommand command;
-        RenderingDevice device;
-        RenderingWindow window;
-
-        uint8_t CurrentFrame{0};
-        uint32_t nextImageIndex;
-        Camera m_Camera;
-        SynchronizationGlobal* SemphoreInfo;
-
-        vk::DescriptorPool DescriptorPool;
-    };
 
     class MORTAL_API RenderingSystem : public Layer{
     public:
@@ -43,17 +21,13 @@ namespace mortal
         RenderingSystem(const RenderingSystem&) = delete;
         RenderingSystem& operator=(const RenderingSystem&) = delete;
 
-        static RenderingSystem* GetInstance(){
+        static RenderingSystem* GetInstance() {
             static RenderingSystem* instance = new RenderingSystem;
             return instance;
-        }    
-
-        void SetUpVulkan();        
-        void ClearUpVulkan();
-
-        inline RenderingSystemInfo& GetVulkanInfo(){
-            return m_Info;
         }
+
+        void SetUpRHI();        
+        inline std::shared_ptr<RHI> GetRHIInfo();
 
         virtual void OnUpdate() override;
         virtual void OnEvent(Event& e) override;
@@ -64,46 +38,14 @@ namespace mortal
         }
     private:
         RenderingSystem();
-
-        void CreateInstance();
-        void DestroyInstance();
-        std::vector<const char*> GetRequireExtensions();
-
-        /*
-            Set Validation content, when error or warning ... occupy,will call debugCallback;
-        */
-        bool CheckValidtionLayer();
-        void SetDebugCallBack();
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            VkDebugUtilsMessageTypeFlagsEXT messageType,
-            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-            void* pUserData);
-
-        template<typename T>
-        T GetFunction(const char* funcName) {
-            auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
-            if (!func) {
-                throw "error";
-            }
-            return func;
-        }
-
-        template<typename T, typename... Args>
-        void GetAndExecuteFunction(const char* funcName, Args&&... args) {
-            auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
-            func(m_Instance, std::forward<Args>(args)...);
-        }
-
         void AddRenderPasses();
         void CameraMove();
     private:
-        vk::Instance m_Instance;
-        VkDebugUtilsMessengerEXT callback;
-        RenderingSystemInfo m_Info;
-        SynchronizationGlobal m_Synchronizations;
+        std::shared_ptr<RHI> m_RHIContext;
         std::vector<std::unique_ptr<RenderPartBase>> m_RenderParts;
     };
 
-
+    std::shared_ptr<RHI> RenderingSystem::GetRHIInfo() {
+        return m_RHIContext;
+    }
 } // namespace mortal

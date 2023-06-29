@@ -17,7 +17,7 @@ namespace mortal
             glm::vec3 lightPos;
         };
 
-        ShadowPart(RenderingSystemInfo& renderinfo);
+        ShadowPart(VulkanContext& renderinfo);
         ~ShadowPart();
         void Init() override;
         void ClearUp() override;

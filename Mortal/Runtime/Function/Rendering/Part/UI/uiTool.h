@@ -13,14 +13,14 @@ namespace mortal
 {
     class UITool{
     public:
-        UITool(RenderingSystemInfo& info) : m_RenderingInfo(info) {}
+        UITool(VulkanContext& info) : m_RenderingInfo(info) {}
         ~UITool() {}
 
         void InitUI(vk::RenderPass render_pass);
         void Draw(vk::CommandBuffer drawCmd, std::function<void(void)> uiFunc);
         void ClearUpUI();
     private:
-        RenderingSystemInfo& m_RenderingInfo;
+        VulkanContext& m_RenderingInfo;
         vk::DescriptorPool m_UIPool;
     };
 } // namespace mortal

@@ -11,7 +11,7 @@ namespace mortal
             glm::mat4 proj;
         };
 
-        DeferredPart(RenderingSystemInfo& info);
+        DeferredPart(VulkanContext& info);
         ~DeferredPart();
         virtual void Init() override;
         virtual void Draw() override;

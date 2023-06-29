@@ -25,7 +25,7 @@ namespace mortal
             float quadratic{ 0.032f };
         };
 
-        BlingPhong(RenderingSystemInfo& info);
+        BlingPhong(VulkanContext& info);
         ~BlingPhong();
 
         virtual void Init() override;

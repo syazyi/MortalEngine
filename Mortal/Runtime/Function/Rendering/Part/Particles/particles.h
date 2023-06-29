@@ -21,7 +21,7 @@ namespace mortal
             glm::mat4 proj;
         };
 
-        ParticlesPart(RenderingSystemInfo& renderInfo);
+        ParticlesPart(VulkanContext& renderInfo);
         ~ParticlesPart();
 
         virtual void Init() override;

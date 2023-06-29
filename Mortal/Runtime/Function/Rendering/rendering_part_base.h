@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
+#include "Math/Vertex.h"
 #include "rendering.h"
 #include "rendering_system.h"
-#include "Math/Vertex.h"
+#include "Rendering/RHI/vulkan_rhi.hpp"
 namespace mortal
 {
     struct RenderingSystemInfo;
@@ -38,7 +39,7 @@ namespace mortal
 
     class RenderPartBase {
     public:
-        RenderPartBase(RenderingSystemInfo& info);
+        RenderPartBase(VulkanContext& info);
         virtual ~RenderPartBase() {}
 
         virtual void Init() = 0;
@@ -75,6 +76,6 @@ namespace mortal
         }
         void ClearUpPrepareUniform(PrepareUniformInfo& info);
     protected:
-        RenderingSystemInfo& m_RenderingInfo;
+        VulkanContext& m_RenderingInfo;
     };
 } // namespace mortal

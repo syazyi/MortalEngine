@@ -2,7 +2,7 @@
 #include <random>
 namespace mortal
 {
-    ParticlesPart::ParticlesPart(RenderingSystemInfo& renderInfo) : RenderPartBase(renderInfo)
+    ParticlesPart::ParticlesPart(VulkanContext& renderInfo) : RenderPartBase(renderInfo)
     {
         Init();
     }

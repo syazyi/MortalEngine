@@ -1,12 +1,12 @@
 #pragma once
-#include "rhi.hpp"
+#include "Rendering/rhi.hpp"
 
-#include "rendering.h"
-#include "rendering_device.h"
-#include "rendering_window.h"
-#include "rendering_swapchain.h"
-#include "rendering_command.h"
-#include "rendering_camera.h"
+#include "Rendering/rendering.h"
+#include "Rendering/rendering_device.h"
+#include "Rendering/rendering_window.h"
+#include "Rendering/rendering_swapchain.h"
+#include "Rendering/rendering_command.h"
+#include "Rendering/rendering_camera.h"
 namespace mortal
 {
     struct SynchronizationGlobal
@@ -43,7 +43,8 @@ namespace mortal
 
         virtual void Init() override;
         virtual void PrepareContext() override;
-        void Clear();
+
+        void ReCreateSwapchain();
     private:
         void CreateInstance();
         bool CheckValidtionLayer();
@@ -51,28 +52,36 @@ namespace mortal
         void SetDebugCallBack();
         static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
+        template<typename T> T GetFunction(const char* funcName);
+        template<typename T, typename... Args> void GetAndExecuteFunction(const char* funcName, Args&&... args);
 
-        template<typename T>
-        T GetFunction(const char* funcName) {
-            auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
-            if (!func) {
-                throw "error";
-            }
-            return func;
-        }
+        void CreateWindowSurface();
+        void CreateDevice();
+        void CreateSwapchain();
+        void CreateCommandPool();
+        void CreateSynchronization();
+        void CreateGlobalDescription();
 
-        template<typename T, typename... Args>
-        void GetAndExecuteFunction(const char* funcName, Args&&... args) {
-            auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
-            func(m_Instance, std::forward<Args>(args)...);
-        }
-
+        void DestroyInstance();
     public:
         vk::Instance m_Instance;
         VkDebugUtilsMessengerEXT callback;
         SynchronizationGlobal m_Synchronizations;
         VulkanContext m_Context;
-    };
+    };// classVulkanRHI
 
-    
+    template<typename T>
+    T VulkanRHI::GetFunction(const char* funcName) {
+        auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
+        if (!func) {
+            throw "error";
+        }
+        return func;
+    }
+
+    template<typename T, typename... Args>
+    void VulkanRHI::GetAndExecuteFunction(const char* funcName, Args&&... args) {
+        auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
+        func(m_Instance, std::forward<Args>(args)...);
+    }
 } // namespace mortal

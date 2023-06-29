@@ -3,45 +3,30 @@ namespace mortal
 {
     VulkanRHI::~VulkanRHI()
     {
+        //Clearup all infomation
+        auto& device = m_Context.device.GetDevice();
+        for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
+            device.destroyFence(m_Synchronizations.m_FrameFences[i]);
+            device.destroySemaphore(m_Synchronizations.m_PresentSemaphores[i]);
+            device.destroySemaphore(m_Synchronizations.m_GetImageSemaphores[i]);
+        }
 
+        m_Context.command.ClearUp();
+        m_Context.swapchain.ClearUp();
+        m_Context.device.ClearUp();
+        m_Context.window.ClearUp(m_Instance);
+        DestroyInstance();
     }
 
     void VulkanRHI::Init()
     {
         CreateInstance();
-        m_Context.window.SetWindow(m_Instance);
-        m_Context.device.SetDevice(m_Instance, m_Context.window.GetSurface());
-        m_Context.swapchain.Create(m_Context.device, m_Context.window);
-        m_Context.command.SetCommandPool(m_Context.device);
-
-        //create semaphore and fence
-        {
-            auto& device = m_Context.device.GetDevice();
-            vk::SemaphoreCreateInfo createInfo{};
-            vk::FenceCreateInfo fCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-            for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
-                m_Synchronizations.m_GetImageSemaphores[i] = device.createSemaphore(createInfo);
-                m_Synchronizations.m_PresentSemaphores[i] = device.createSemaphore(createInfo);
-                m_Synchronizations.m_FrameFences[i] = device.createFence(fCreateInfo);
-            }
-        }
-        m_Context.SemphoreInfo = &m_Synchronizations;
-
-        {
-            auto& device = m_Context.device.GetDevice();
-            
-            std::vector<vk::DescriptorPoolSize> poolsizes;
-            poolsizes.reserve(3);
-            poolsizes.emplace_back(vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer, 128});
-            poolsizes.emplace_back(vk::DescriptorPoolSize{vk::DescriptorType::eUniformBufferDynamic, 128});
-            poolsizes.emplace_back(vk::DescriptorPoolSize{vk::DescriptorType::eCombinedImageSampler, 128});
-            uint32_t maxsets = 0;
-            for (auto& poolsize : poolsizes) {
-                maxsets += poolsize.descriptorCount;
-            }
-            m_Context.DescriptorPool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo{ {}, maxsets, poolsizes });
-
-        }
+        CreateWindowSurface();
+        CreateDevice();
+        CreateSwapchain();
+        CreateCommandPool();
+        CreateSynchronization();
+        CreateGlobalDescription();
     }
 
     void VulkanRHI::PrepareContext()
@@ -121,6 +106,65 @@ namespace mortal
     {
         std::cerr << "validation layer: \n" << pCallbackData->pMessage << "\n\n";
         return VK_FALSE;
+    }
+
+    void VulkanRHI::CreateWindowSurface()
+    {
+        m_Context.window.SetWindow(m_Instance);
+    }
+
+    void VulkanRHI::CreateDevice()
+    {
+        m_Context.device.SetDevice(m_Instance, m_Context.window.GetSurface());
+    }
+
+    void VulkanRHI::CreateSwapchain()
+    {
+        m_Context.swapchain.Create(m_Context.device, m_Context.window);
+    }
+
+    void VulkanRHI::CreateCommandPool()
+    {
+        m_Context.command.SetCommandPool(m_Context.device);
+    }
+
+    void VulkanRHI::CreateSynchronization()
+    {
+        //create semaphore and fence
+        auto& device = m_Context.device.GetDevice();
+        vk::SemaphoreCreateInfo createInfo{};
+        vk::FenceCreateInfo fCreateInfo(vk::FenceCreateFlagBits::eSignaled);
+        for (uint32_t i = 0; i < MaxFrameInFlight; i++) {
+            m_Synchronizations.m_GetImageSemaphores[i] = device.createSemaphore(createInfo);
+            m_Synchronizations.m_PresentSemaphores[i] = device.createSemaphore(createInfo);
+            m_Synchronizations.m_FrameFences[i] = device.createFence(fCreateInfo);
+        }
+        m_Context.SemphoreInfo = &m_Synchronizations;
+    }
+
+    void VulkanRHI::CreateGlobalDescription()
+    {
+        //create description
+        auto& device = m_Context.device.GetDevice();
+
+        std::vector<vk::DescriptorPoolSize> poolsizes;
+        poolsizes.reserve(3);
+        poolsizes.emplace_back(vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 128 });
+        poolsizes.emplace_back(vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBufferDynamic, 128 });
+        poolsizes.emplace_back(vk::DescriptorPoolSize{ vk::DescriptorType::eCombinedImageSampler, 128 });
+        uint32_t maxsets = 0;
+        for (auto& poolsize : poolsizes) {
+            maxsets += poolsize.descriptorCount;
+        }
+        m_Context.DescriptorPool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo{ {}, maxsets, poolsizes });
+    }
+
+    void VulkanRHI::DestroyInstance()
+    {
+        if constexpr (EnableValidtion) {
+            GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", callback, nullptr);
+        }
+        m_Instance.destroy();
     }
 
 } // namespace mortal

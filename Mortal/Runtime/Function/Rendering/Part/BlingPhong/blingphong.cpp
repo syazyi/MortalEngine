@@ -2,7 +2,7 @@
 
 namespace mortal
 {
-    BlingPhong::BlingPhong(RenderingSystemInfo& info) : RenderPartBase(info), m_UITool(info)
+    BlingPhong::BlingPhong(VulkanContext& info) : RenderPartBase(info), m_UITool(info)
     {
         Init();
         m_UITool.InitUI(m_BlingPhongPass);

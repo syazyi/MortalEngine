@@ -4,4 +4,8 @@ namespace mortal
     
 
     
+    RHI::~RHI()
+    {
+    }
+
 } // namespace mortal

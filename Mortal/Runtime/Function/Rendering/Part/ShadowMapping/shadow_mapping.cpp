@@ -2,7 +2,7 @@
 
 namespace mortal{
 
-	ShadowPart::ShadowPart(RenderingSystemInfo& renderinfo) : RenderPartBase(renderinfo), m_UITool(renderinfo)
+	ShadowPart::ShadowPart(VulkanContext& renderinfo) : RenderPartBase(renderinfo), m_UITool(renderinfo)
 	{
 		Init();
 		//m_UITool.InitUI(m_ScenePass);

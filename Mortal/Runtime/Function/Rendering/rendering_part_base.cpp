@@ -8,7 +8,7 @@
 
 namespace mortal
 {
-	RenderPartBase::RenderPartBase(RenderingSystemInfo& info) : m_RenderingInfo(info)	
+	RenderPartBase::RenderPartBase(VulkanContext& info) : m_RenderingInfo(info)
 	{
 
 	}

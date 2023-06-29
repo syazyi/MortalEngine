@@ -3,7 +3,7 @@
 
 namespace mortal
 {
-    TrianglePart::TrianglePart(RenderingSystemInfo& info) : RenderPartBase(info)
+    TrianglePart::TrianglePart(VulkanContext& info) : RenderPartBase(info)
     {
         Init();
     }

@@ -13,7 +13,7 @@ namespace mortal
             glm::mat4 Project;
         };
     public:
-        explicit TrianglePart(RenderingSystemInfo& info);
+        explicit TrianglePart(VulkanContext& info);
         ~TrianglePart();
 
         virtual void Init() override;
