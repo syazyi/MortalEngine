@@ -1,9 +1,6 @@
-#include "rhi.hpp"
+#include "rhi.h"
 namespace mortal
 {
-    
-
-    
     RHI::~RHI()
     {
     }

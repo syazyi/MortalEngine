@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
 #include "Math/Vertex.h"
-#include "rendering.h"
-#include "rendering_system.h"
-#include "Rendering/RHI/vulkan_rhi.hpp"
+#include "Rendering/rendering.h"
+#include "Rendering/rendering_system.h"
+#include "Rendering/RHI/vulkan/vulkan_rhi.h"
 namespace mortal
 {
     struct RenderingSystemInfo;

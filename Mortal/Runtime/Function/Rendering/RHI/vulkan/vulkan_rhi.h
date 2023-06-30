@@ -1,14 +1,28 @@
 #pragma once
-#include "Rendering/rhi.hpp"
+#include "Rendering/rhi.h"
 
 #include "Rendering/rendering.h"
-#include "Rendering/rendering_device.h"
-#include "Rendering/rendering_window.h"
-#include "Rendering/rendering_swapchain.h"
-#include "Rendering/rendering_command.h"
 #include "Rendering/rendering_camera.h"
+#include "Rendering/RHI/vulkan/rendering_device.h"
+#include "Rendering/RHI/vulkan/rendering_window.h"
+#include "Rendering/RHI/vulkan/rendering_swapchain.h"
+#include "Rendering/RHI/vulkan/rendering_command.h"
+#include "Rendering/RHI/api.h"
 namespace mortal
 {
+    namespace renderAPI {
+        struct RenderInstance_Vulkan : public RenderInstance
+        {
+            vk::Instance instance;
+            
+            VkDebugUtilsMessengerEXT callback_vulkan;
+            std::vector<const char*> s_LayerNames;
+        };
+
+        RenderInstance* CreateInstance_Vulkan(const CreateInstanceDescriptor* desc);
+        void FreeInstance_Vulkan(const RenderInstance* ri);
+    }//namespace renderAPI
+
     struct SynchronizationGlobal
     {
         std::array<vk::Semaphore, MaxFrameInFlight> m_GetImageSemaphores;
@@ -42,7 +56,7 @@ namespace mortal
         ~VulkanRHI();
 
         virtual void Init() override;
-        virtual void PrepareContext() override;
+        //virtual void PrepareContext() override;
 
         void ReCreateSwapchain();
     private:
@@ -50,10 +64,6 @@ namespace mortal
         bool CheckValidtionLayer();
         std::vector<const char*> GetRequireExtensions();
         void SetDebugCallBack();
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-
-        template<typename T> T GetFunction(const char* funcName);
-        template<typename T, typename... Args> void GetAndExecuteFunction(const char* funcName, Args&&... args);
 
         void CreateWindowSurface();
         void CreateDevice();
@@ -71,8 +81,8 @@ namespace mortal
     };// classVulkanRHI
 
     template<typename T>
-    T VulkanRHI::GetFunction(const char* funcName) {
-        auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
+    T GetFunction(const char* funcName, vk::Instance instance) {
+        auto func = reinterpret_cast<T>(instance.getProcAddr(funcName));
         if (!func) {
             throw "error";
         }
@@ -80,8 +90,21 @@ namespace mortal
     }
 
     template<typename T, typename... Args>
-    void VulkanRHI::GetAndExecuteFunction(const char* funcName, Args&&... args) {
-        auto func = reinterpret_cast<T>(m_Instance.getProcAddr(funcName));
-        func(m_Instance, std::forward<Args>(args)...);
+    void GetAndExecuteFunction(const char* funcName, vk::Instance instance, Args&&... args) {
+        auto func = reinterpret_cast<T>(instance.getProcAddr(funcName));
+        func(instance, std::forward<Args>(args)...);
     }
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+
+
+
+
+
+
+
+
+
+
+
 } // namespace mortal

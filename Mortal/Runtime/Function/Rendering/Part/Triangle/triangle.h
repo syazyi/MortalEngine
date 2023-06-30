@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/rendering_part_base.h"
+#include "Rendering/RHI/vulkan/rendering_part_base.h"
 namespace mortal
 {
     class TrianglePart : public RenderPartBase {

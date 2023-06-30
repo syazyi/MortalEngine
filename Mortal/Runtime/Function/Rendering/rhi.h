@@ -6,7 +6,7 @@ namespace mortal
     public:
         virtual ~RHI();
         virtual void Init() = 0;
-        virtual void PrepareContext() = 0;
+        //virtual void PrepareContext() = 0;
     };
 
 

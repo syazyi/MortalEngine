@@ -1,6 +1,8 @@
-#include "vulkan_rhi.hpp"
+#include "vulkan_rhi.h"
 namespace mortal
 {
+    
+
     VulkanRHI::~VulkanRHI()
     {
         //Clearup all infomation
@@ -27,11 +29,6 @@ namespace mortal
         CreateCommandPool();
         CreateSynchronization();
         CreateGlobalDescription();
-    }
-
-    void VulkanRHI::PrepareContext()
-    {
-
     }
 
     //private
@@ -96,13 +93,13 @@ namespace mortal
                 VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
                 VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
             debugUtilsCreateInfo.pfnUserCallback = &debugCallback;
-            GetAndExecuteFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT", &debugUtilsCreateInfo,
+            GetAndExecuteFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT", m_Instance, &debugUtilsCreateInfo,
                 nullptr,
                 &callback);
         }
     }
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRHI::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+    VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
         std::cerr << "validation layer: \n" << pCallbackData->pMessage << "\n\n";
         return VK_FALSE;
@@ -162,9 +159,69 @@ namespace mortal
     void VulkanRHI::DestroyInstance()
     {
         if constexpr (EnableValidtion) {
-            GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", callback, nullptr);
+            GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", m_Instance,callback, nullptr);
         }
         m_Instance.destroy();
     }
 
+    namespace renderAPI {
+        RenderInstance* CreateInstance_Vulkan(const CreateInstanceDescriptor* desc)
+        {
+            if constexpr (EnableValidtion) {
+                s_LayerNames.push_back("VK_LAYER_KHRONOS_validation");
+                std::vector<vk::ExtensionProperties> layerNames = vk::enumerateInstanceExtensionProperties();
+                bool result = false;
+                for (auto& sLayerName : s_LayerNames) {
+                    for (auto& layerName : layerNames) {
+                        if (strcmp(layerName.extensionName, sLayerName) == 0) {
+                            result |= true;
+                        }
+                    }
+                }
+            }
+            //create
+            vk::ApplicationInfo appInfo("Mortal", 1, "Mortal Engine", 1, VK_API_VERSION_1_3);
+
+            uint32_t extensionsCount = 0;
+            const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+            std::vector<const char*> extensions(glfwExtensions, glfwExtensions + extensionsCount);
+            if constexpr (EnableValidtion) {
+                extensions.push_back("VK_EXT_debug_utils");
+            }
+
+            vk::InstanceCreateInfo createInfo({}, &appInfo, s_LayerNames, extensions);
+
+            auto* riv = new RenderInstance_Vulkan;
+            riv->instance = vk::createInstance(createInfo);
+
+            if constexpr (EnableValidtion) {
+                if constexpr (EnableValidtion) {
+                    VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{};
+                    debugUtilsCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+                    debugUtilsCreateInfo.messageSeverity = VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                        VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                        VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+                    debugUtilsCreateInfo.messageType = VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                        VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                        VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+                    debugUtilsCreateInfo.pfnUserCallback = &debugCallback;
+                    GetAndExecuteFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT", riv->instance, &debugUtilsCreateInfo,
+                        nullptr,
+                        &riv->callback_vulkan);
+                }
+            }
+            return reinterpret_cast<RenderInstance*>(riv);
+        }
+
+        void FreeInstance_Vulkan(const RenderInstance* ri)
+        {
+            auto riv = reinterpret_cast<const RenderInstance_Vulkan*>(ri);
+            if constexpr (EnableValidtion) {
+                GetAndExecuteFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT", riv->instance, riv->callback_vulkan, nullptr);
+            }
+            riv->instance.destroy();
+        }
+    }
+
 } // namespace mortal
+

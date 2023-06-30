@@ -1,8 +1,7 @@
 #include "rendering_system.h"
-#include "Rendering/rendering_device.h"
 #include "Window/WindowsWindow.h"
 
-#include "rendering_part_base.h"
+#include "RHI/vulkan/rendering_part_base.h"
 #include "Rendering/Part/Triangle/triangle.h"
 #include "Rendering/Part/BlingPhong/blingphong.h"
 #include "Rendering/Part/ShadowMapping/shadow_mapping.h"

@@ -14,12 +14,13 @@ namespace mortal
     constexpr bool EnableValidtion = true;
 #endif // NDEBUG
 
-
+    constexpr bool IsRenderAPIVulkan = true;
 
     constexpr bool EnableCompute = true;
 
     constexpr uint8_t MaxFrameInFlight = 2;
 
+    static std::vector<const char*> s_LayerNames;
     /*
      static void CheckVulkanResult(vk::Result& result, vk::Result condition, const char* message) {
         if (result != condition) {
@@ -27,11 +28,4 @@ namespace mortal
         }
     }
     */
-
-    template<typename T, typename... Args>
-    vk::Result LoadFunction() {
-        auto func = reinterpret_cast<T>()
-    }
-
-    static std::vector<const char*> s_LayerNames;
 } // namespace mortal

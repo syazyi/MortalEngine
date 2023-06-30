@@ -34,7 +34,7 @@ namespace mortal
 		vk::SubmitInfo subInfo({}, {}, drawCmdBuffer, {});
 		queue.submit(subInfo);
 		queue.waitIdle();
-
+		
 		m_DeviceRef->freeCommandBuffers( m_CommandPool, drawCmdBuffer);
 	}
 	std::vector<vk::CommandBuffer>& RenderCommand::GetCommandBuffers()

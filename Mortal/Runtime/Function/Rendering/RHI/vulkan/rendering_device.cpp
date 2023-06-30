@@ -1,4 +1,4 @@
-#include "Rendering/rendering_device.h"
+#include "rendering_device.h"
 #include <set>
 #include "GLFW/glfw3native.h"
 
