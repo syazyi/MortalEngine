@@ -8,7 +8,8 @@ namespace mortal
         {
             static const ProcTable vulaknTable{
                 &CreateInstance_Vulkan, 
-                &FreeInstance_Vulkan
+                &FreeInstance_Vulkan, 
+                &EnumPhysicalDevice_Vulkan
             };
             return &vulaknTable;
         }

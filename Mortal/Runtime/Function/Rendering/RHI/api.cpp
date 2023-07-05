@@ -27,6 +27,11 @@ namespace mortal
 
             ri->proc_table->free_instance(ri);
         }
+
+        void EnumPhysicalDevice(RenderInstance* ri, const RenderPhysicalDevice* rpd)
+        {
+            rpd->proc_table->enum_physical_device(ri, rpd);
+        }
     } // namespace renderAPI
     
 

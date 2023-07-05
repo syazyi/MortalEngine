@@ -11,16 +11,29 @@
 namespace mortal
 {
     namespace renderAPI {
+
+
+        //Instance
         struct RenderInstance_Vulkan : public RenderInstance
         {
             vk::Instance instance;
-            
+            RenderPhysicalDevice_Vulkan* physical_device;
             VkDebugUtilsMessengerEXT callback_vulkan;
-            std::vector<const char*> s_LayerNames;
+        };
+
+        struct RenderPhysicalDevice_Vulkan : public RenderPhysicalDevice
+        {
+            vk::PhysicalDevice physical_device;
         };
 
         RenderInstance* CreateInstance_Vulkan(const CreateInstanceDescriptor* desc);
         void FreeInstance_Vulkan(const RenderInstance* ri);
+        //End of Instance
+
+        // Physical(adapter)
+        void EnumPhysicalDevice_Vulkan(RenderInstance* ri, const RenderPhysicalDevice* rpd);
+        //End of Physical(adapter)
+
     }//namespace renderAPI
 
     struct SynchronizationGlobal
