@@ -15,21 +15,42 @@ namespace mortal
             eMetal
         };
 
-        //Object
-        struct RenderInstance
+        enum class QueueType 
         {
+            eGrphics = 0,
+            eCompute = 1,
+            eTransfer = 2
         };
+
+        //Object
+        struct RenderInstance{};
         
         struct RenderPhysicalDevice
         {
             RenderInstance* instance;
         };
 
+        struct RenderDevice
+        {
+            RenderPhysicalDevice* physical_deivce;
+        };
         //Descriptors
         struct CreateInstanceDescriptor
         {
             RenderAPIType api_type;
             bool enable_validtion;
+        };
+        
+        struct CreateDeviceQueueGroupDescriptor
+        {
+            QueueType queue_type;
+            uint32_t queue_count;
+        };
+
+        struct CreateDeviceDesciptor
+        {
+            CreateDeviceQueueGroupDescriptor* queue_group_des;
+            uint32_t queue_group_count;
         };
 
         class RHIBase {
@@ -44,6 +65,12 @@ namespace mortal
             //Physical
             virtual std::vector<RenderPhysicalDevice*> EnumPhysicalDevice(RenderInstance* ri) = 0;
             //End of Physical
+
+            //Device
+            virtual RenderDevice* CreateDevice(RenderPhysicalDevice* rpd, CreateDeviceDesciptor d_desc) = 0;
+            virtual void FreeDevice(RenderDevice* rd) = 0;
+            //End of Device
+
         };
     } // namespace rhi
     
