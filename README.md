@@ -5,11 +5,25 @@
 该引擎参考资料：
 * 渲染API资料：
   
+  https://vulkan-tutorial.com/
+
   https://github.com/SakuraEngine/SakuraEngine
   
   https://github.com/BoomingTech/Piccolo
   
   https://github.com/khalladay/VkMaterialSystem
+
+  https://zhuanlan.zhihu.com/p/417561163
+
+  https://zhuanlan.zhihu.com/p/201311862
+
+  https://www.zhihu.com/question/604591389/answer/3106278984
+
+  优化：
+
+  https://zhuanlan.zhihu.com/p/20712354
+
+  https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/
   
 * Demo参考资料：
   
@@ -23,11 +37,17 @@
   
   https://sites.cs.ucsb.edu/~lingqi/teaching/games202.html
 
+  PBRT：
+  
+  https://zhuanlan.zhihu.com/p/545848268
+
 * 引擎参考资料：
   
   https://github.com/TheCherno/Hazel
   
   https://github.com/BoomingTech/Piccolo
+
+
 ## Demo
 
 ### Phong
