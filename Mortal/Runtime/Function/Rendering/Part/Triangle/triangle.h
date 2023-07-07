@@ -17,6 +17,7 @@ namespace mortal
         ~TrianglePart();
 
         virtual void Init() override;
+        void UseRHIInit();
         virtual void ClearUp() override;
         virtual void Draw() override;
     private:

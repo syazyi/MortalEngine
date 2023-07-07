@@ -1,5 +1,6 @@
 #include "triangle.h"
 #include "Rendering/rendering_camera.h"
+#include "Rendering/RHI/api.h"
 
 namespace mortal
 {
@@ -352,6 +353,11 @@ namespace mortal
             auto result_pipeline = device.createGraphicsPipeline(nullptr, pipelineCreateInfo);
             m_Pipeline = result_pipeline.value;
         }
+    }
+
+    void TrianglePart::UseRHIInit()
+    {
+
     }
 
     void TrianglePart::ClearUp()
