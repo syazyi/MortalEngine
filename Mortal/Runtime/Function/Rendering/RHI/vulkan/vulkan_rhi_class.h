@@ -21,9 +21,12 @@ namespace mortal
         class RHI_Vulkan : public RHIBase
         {
         public:    
+            //Instance
             virtual RenderInstance* CreateInstance(const CreateInstanceDescriptor* desc) override;
             virtual void FreeInstance(const RenderInstance* ri) override;
+            //PhysicalDevice
             virtual std::vector<RenderPhysicalDevice*> EnumPhysicalDevice(RenderInstance* ri)  override;
+            //Device
         private:
         //Implement
             RenderInstance* CreateInstance_Vulkan(const CreateInstanceDescriptor* desc);
