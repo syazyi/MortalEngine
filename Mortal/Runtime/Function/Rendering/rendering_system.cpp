@@ -6,6 +6,7 @@
 #include "Rendering/Part/BlingPhong/blingphong.h"
 #include "Rendering/Part/ShadowMapping/shadow_mapping.h"
 #include "Rendering/Part/Particles/particles.h"
+#include "Rendering/Part/Deferred/deferred.h"
 #include "Core/Events/WindowEvent.h"
 namespace mortal
 {
@@ -65,9 +66,10 @@ namespace mortal
         auto rhi = std::static_pointer_cast<VulkanRHI>(m_RHIContext);
         //AddRenderPart(new TrianglePart(rhi->m_Context));
         //AddRenderPart(new UI(m_Info));
-        AddRenderPart(new BlingPhong(rhi->m_Context));
+        //AddRenderPart(new BlingPhong(rhi->m_Context));
         //AddRenderPart(new ShadowPart(m_Info));
         //AddRenderPart(new ParticlesPart(m_Info));
+        AddRenderPart(new DeferredPart(rhi->m_Context));
     }
 
     void RenderingSystem::CameraMove()

@@ -11,6 +11,11 @@ namespace mortal
         }
 
 
+        bool RenderingQueue_Vulkan::HasGraphicPresentQueue()
+        {
+             return GraphicQueue.has_value() && GraphicQueueFamilyIndex.has_value() && PresentQueue.has_value() && PresentQueueFamilyIndex.has_value();
+        }
+
     }
 }
 

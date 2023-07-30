@@ -34,7 +34,15 @@ namespace mortal
     struct PrepareUniformInfo {
         vk::Buffer uniformBuffer;
         vk::DeviceMemory uniformMemory;
-        void* mapped;
+        void* mapped{ nullptr };
+    };
+
+    struct PrepareTextureInfo
+    {
+        vk::Image textureImage;
+        vk::DeviceMemory textureMemory;
+        vk::ImageView textureImageView;
+        vk::Sampler textureSampler;
     };
 
     class RenderPartBase {
@@ -75,6 +83,8 @@ namespace mortal
             return ret;
         }
         void ClearUpPrepareUniform(PrepareUniformInfo& info);
+
+        PrepareTextureInfo PrepareTexture(const std::string& file);
     protected:
         VulkanContext& m_RenderingInfo;
     };

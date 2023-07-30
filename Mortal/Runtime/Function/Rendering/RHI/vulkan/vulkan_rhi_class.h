@@ -1,10 +1,13 @@
 #pragma once
 #include "Rendering/rendering.h"
+#include "vulkan_utility.h"
 #include "Rendering/RHI/rhi_class.h"
 namespace mortal
 {
     namespace rhi
     {
+        struct RenderPhysicalDevice_Vulkan;
+
         //Instance
         struct RenderInstance_Vulkan : public RenderInstance
         {
@@ -13,9 +16,15 @@ namespace mortal
             VkDebugUtilsMessengerEXT callback_vulkan;
         };
 
+        struct RenderDevice_Vulkan : public RenderDevice
+        {
+            vk::Device device;
+        };
+
         struct RenderPhysicalDevice_Vulkan : public RenderPhysicalDevice
         {
             vk::PhysicalDevice physical_device;
+            RenderingQueue_Vulkan queue_families;
         };
 
         class RHI_Vulkan : public RHIBase

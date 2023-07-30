@@ -7,7 +7,6 @@
 #include "Rendering/RHI/vulkan/rendering_window.h"
 #include "Rendering/RHI/vulkan/rendering_swapchain.h"
 #include "Rendering/RHI/vulkan/rendering_command.h"
-#include "Rendering/RHI/api.h"
 namespace mortal
 {
     struct SynchronizationGlobal

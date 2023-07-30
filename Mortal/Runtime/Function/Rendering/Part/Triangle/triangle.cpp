@@ -1,6 +1,5 @@
 #include "triangle.h"
 #include "Rendering/rendering_camera.h"
-#include "Rendering/RHI/api.h"
 
 namespace mortal
 {

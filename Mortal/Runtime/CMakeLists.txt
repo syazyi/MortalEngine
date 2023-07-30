@@ -27,6 +27,9 @@ target_include_directories(${LIBPROJECT_NAME} PUBLIC ${MORTAL_PATH}/Function)
 #3rd Library Path
 # add vulkan in imgui.cmake
 
+#vulkan allocater
+target_include_directories(${LIBPROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/VulkanSDK/include/memory_allocate)
+
 #add stb path
 target_include_directories(${LIBPROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/stb)
 

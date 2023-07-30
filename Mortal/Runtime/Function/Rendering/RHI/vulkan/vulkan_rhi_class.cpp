@@ -1,5 +1,6 @@
 #include "vulkan_rhi_class.h"
-#include "vulkan_utility.h"
+
+#include <set>
 namespace mortal
 {
     namespace rhi
@@ -20,6 +21,16 @@ namespace mortal
         std::vector<RenderPhysicalDevice*> RHI_Vulkan::EnumPhysicalDevice(RenderInstance* ri)
         {
             return EnumPhysicalDevice_Vulkan(ri);
+        }
+
+        RenderDevice* RHI_Vulkan::CreateDevice(RenderPhysicalDevice* rpd, CreateDeviceDesciptor d_desc)
+        {
+            return CreateDevice_Vulkan(rpd, d_desc);
+        }
+
+        void RHI_Vulkan::FreeDevice(RenderDevice* rd)
+        {
+
         }
 
 
@@ -96,6 +107,42 @@ namespace mortal
         }
         //End of Physical
 
+        //Device
+        RenderDevice* RHI_Vulkan::CreateDevice_Vulkan(RenderPhysicalDevice* rpd, CreateDeviceDesciptor d_desc)
+        {
+            //Assume it have a best PhysicalDevice
+            //and Queue Family store in PhysicalStruct
+                    //Create Logic Device and Get Queue
+            auto* rpdv = reinterpret_cast<RenderPhysicalDevice_Vulkan*>(rpd);
+            std::set<uint32_t> queueIndices
+            { 
+                rpdv->queue_families.GraphicQueueFamilyIndex.value(),
+                rpdv->queue_families.PresentQueueFamilyIndex.value(), 
+                rpdv->queue_families.ComputeQueueFamilyIndex.value() 
+            };
+            std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+            for (auto& queueIndex : queueIndices) {
+                float queuePriorites = 1.0f;
+                vk::DeviceQueueCreateInfo createInfo({}, queueIndex, 1, &queuePriorites);
+                queueCreateInfos.push_back(createInfo);
+            }
+            //auto feature = EnablePhysicalFeature();
+            //vk::DeviceCreateInfo createInfo({}, queueCreateInfos, s_LayerNames, s_DeviceExtensions, &feature);
+
+            auto* rd = new RenderDevice_Vulkan;
+
+            //rd->device = rpdv->physical_device.createDevice(createInfo);
+
+            //rpdv->queue_families.GraphicQueue = rd->device.getQueue(rpdv->queue_families.GraphicQueueFamilyIndex.value(), 0);
+            //rpdv->queue_families.PresentQueue = rd->device.getQueue(rpdv->queue_families.PresentQueueFamilyIndex.value(), 0);
+            //rpdv->queue_families.ComputeQueue = rd->device.getQueue(rpdv->queue_families.ComputeQueueFamilyIndex.value(), 0);
+            return rd;
+        }
+        void RHI_Vulkan::FreeDevice_Vulkan(RenderDevice* rd)
+        {
+
+        }
+        //End of Device
     } // namespace rhi
     
 } // namespace mortal

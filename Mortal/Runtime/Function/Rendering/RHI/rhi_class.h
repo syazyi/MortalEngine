@@ -73,6 +73,4 @@ namespace mortal
 
         };
     } // namespace rhi
-    
-
 } // namespace mortal

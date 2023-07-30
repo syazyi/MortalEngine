@@ -1,9 +1,12 @@
 #pragma once 
-
+#include <optional>
+#include "Rendering/rendering.h"
 namespace mortal
 {
     namespace rhi
     {
+        VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+     
         //Instance
         struct VkInstanceUtil {
             VkInstanceUtil()
@@ -28,7 +31,6 @@ namespace mortal
             VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo;
         };
 
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
         template<typename T>
         T GetFunction(const char* funcName, vk::Instance instance) {
@@ -46,6 +48,21 @@ namespace mortal
         }
         //End of Instance 
 
+
+        //Physical 
+        struct RenderingQueue_Vulkan
+        {
+            std::optional<vk::Queue> GraphicQueue;
+            std::optional<uint32_t> GraphicQueueFamilyIndex;
+
+            std::optional<vk::Queue> PresentQueue;
+            std::optional<uint32_t> PresentQueueFamilyIndex;
+
+            std::optional<vk::Queue> ComputeQueue;
+            std::optional<uint32_t> ComputeQueueFamilyIndex;
+
+            bool HasGraphicPresentQueue();
+        };
 
     } // namespace rhi
     

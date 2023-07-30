@@ -6,12 +6,23 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
 namespace mortal
 {
+    static VmaAllocator m_VmaAllocator;
+
+
 	RenderPartBase::RenderPartBase(VulkanContext& info) : m_RenderingInfo(info)
 	{
-
-	}
+        VmaAllocatorCreateInfo allocatorCI{};
+        allocatorCI.vulkanApiVersion = VK_API_VERSION_1_3;
+        allocatorCI.physicalDevice = m_RenderingInfo.device.GetPhysicalDevice();
+        allocatorCI.device = m_RenderingInfo.device.GetDevice();
+        allocatorCI.instance = m_RenderingInfo.device.GetInstanceRef();
+        vmaCreateAllocator(&allocatorCI, &m_VmaAllocator);
+    }
 
     void RenderPartBase::PrepareFrame()
     {
@@ -126,29 +137,78 @@ namespace mortal
         auto verteices_size = modelInfo.vertices.size() * sizeof(modelInfo.vertices[0]);
         auto indices_size = modelInfo.indeices.size() * sizeof(modelInfo.indeices[0]);
         ret.modelInfo = modelInfo;
-        ret.vertexBuffer = CreateBufferExclusive(verteices_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
-        ret.indexBuffer = CreateBufferExclusive(indices_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
-        ret.vertexMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ ret.vertexBuffer, ret.indexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+        
+        //vertex
+        //ret.vertexBuffer = CreateBufferExclusive(verteices_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+        //ret.vertexMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ ret.vertexBuffer, ret.indexBuffer }, vk::MemoryPropertyFlagBits::eDeviceLocal);
+        vk::BufferCreateInfo vertexCreateInfo({}, verteices_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+        auto& c_vertexCreateInfo = static_cast<VkBufferCreateInfo>(vertexCreateInfo);
+        VmaAllocationCreateInfo vertexAllocationCreateInfo{};
+        vertexAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        VmaAllocation vertexAllocation;
+        VkBuffer vertexBuffer;
+        vmaCreateBuffer(m_VmaAllocator, &c_vertexCreateInfo, &vertexAllocationCreateInfo, &vertexBuffer, &vertexAllocation, nullptr);
+        
+        ret.vertexBuffer = vertexBuffer;
+        ret.vertexMemory = vertexAllocation->GetMemory();
 
-        auto stagebuffer = CreateBufferExclusive(verteices_size + indices_size, vk::BufferUsageFlagBits::eTransferSrc);
-        auto stageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ stagebuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+        //index
+        //ret.indexBuffer = CreateBufferExclusive(indices_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+        vk::BufferCreateInfo indexCreateInfo({}, indices_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
+        auto& c_indexCreateInfo = static_cast<VkBufferCreateInfo>(indexCreateInfo);
+        VmaAllocationCreateInfo indexAllocationCreateInfo{};
+        indexAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        VmaAllocation indexAllocation;
+        VkBuffer indexBuffer;
+        vmaCreateBuffer(m_VmaAllocator, &c_indexCreateInfo, &indexAllocationCreateInfo, &indexBuffer, &indexAllocation, nullptr);
+        ret.indexBuffer = indexBuffer;
 
+
+        //copy
+        //create stage buffer
+        //auto stagebuffer = CreateBufferExclusive(verteices_size + indices_size, vk::BufferUsageFlagBits::eTransferSrc);
+        //auto stageMemory = CreateMemoryAndBind_Buffer(std::vector<vk::Buffer>{ stagebuffer }, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+        vk::BufferCreateInfo stageBufferCreateInfo({}, verteices_size > indices_size? verteices_size : indices_size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive);
+        auto& c_stageBufferCreateInfo = static_cast<VkBufferCreateInfo>(stageBufferCreateInfo);
+        VmaAllocationCreateInfo stageAllocationCreateInfo{};
+        stageAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        stageAllocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        VmaAllocation stageAllocation;
+        VkBuffer c_stageBuffer;
+        vmaCreateBuffer(m_VmaAllocator, &c_stageBufferCreateInfo, &stageAllocationCreateInfo, &c_stageBuffer, &stageAllocation, nullptr);
+        vk::Buffer stageBuffer = c_stageBuffer;
+        auto stageMemory = stageAllocation->GetMemory();
+
+        //mapping memory and copy
+        //void* data = device.mapMemory(stageMemory, 0, verteices_size);
+        //memcpy(data, modelInfo.vertices.data(), verteices_size);
+        //device.unmapMemory(stageMemory);
+
+        //data = device.mapMemory(stageMemory, verteices_size, indices_size);
+        //memcpy(data, modelInfo.indeices.data(), indices_size);
+        //device.unmapMemory(stageMemory);
         auto& device = m_RenderingInfo.device.GetDevice();
-        void* data = device.mapMemory(stageMemory, 0, verteices_size);
-        memcpy(data, modelInfo.vertices.data(), verteices_size);
-        device.unmapMemory(stageMemory);
-
-        data = device.mapMemory(stageMemory, verteices_size, indices_size);
-        memcpy(data, modelInfo.indeices.data(), indices_size);
-        device.unmapMemory(stageMemory);
-
         auto cmd = m_RenderingInfo.command.BeginSingleCommand();
-        cmd.copyBuffer(stagebuffer, ret.vertexBuffer, { vk::BufferCopy(0, 0, verteices_size)});
-        cmd.copyBuffer(stagebuffer, ret.indexBuffer, { vk::BufferCopy(verteices_size, 0, indices_size) });
 
+        void* data;
+        vmaMapMemory(m_VmaAllocator, stageAllocation, &data);
+        memcpy(data, modelInfo.vertices.data(), verteices_size);
+        vmaUnmapMemory(m_VmaAllocator, stageAllocation);
+
+        cmd.copyBuffer(stageBuffer, ret.vertexBuffer, { vk::BufferCopy(0, 0, verteices_size)});
         m_RenderingInfo.command.EndSingleCommand(cmd, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
-        device.freeMemory(stageMemory);
-        device.destroyBuffer(stagebuffer);
+
+
+        cmd = m_RenderingInfo.command.BeginSingleCommand();
+
+        vmaMapMemory(m_VmaAllocator, stageAllocation, &data);
+        memcpy(data, modelInfo.indeices.data(), indices_size);
+        vmaUnmapMemory(m_VmaAllocator, stageAllocation);
+
+        cmd.copyBuffer(stageBuffer, ret.indexBuffer, { vk::BufferCopy(0, 0, indices_size) });
+        m_RenderingInfo.command.EndSingleCommand(cmd, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+
+        device.destroyBuffer(stageBuffer);
         return ret;
     }
 
@@ -166,6 +226,71 @@ namespace mortal
         device.unmapMemory(info.uniformMemory);
         device.freeMemory(info.uniformMemory);
         device.destroyBuffer(info.uniformBuffer);
+    }
+
+    PrepareTextureInfo RenderPartBase::PrepareTexture(const std::string& file)
+    {
+        auto& device = m_RenderingInfo.device.GetDevice();
+
+        auto import_texture = LoadTexture(file);
+        vk::ImageCreateInfo textureImageCreateInfo( {}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Srgb, vk::Extent3D( vk::Extent2D(import_texture.texWidth, import_texture.texHeight), 1 ),
+                1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive );
+
+        VmaAllocationCreateInfo vmaAllocationCI{};
+        vmaAllocationCI.usage = VMA_MEMORY_USAGE_AUTO;
+        
+        VmaAllocation textureAllocation;
+        VkImage tempImage;
+
+        auto& c_textureImageCreateInfo = static_cast<VkImageCreateInfo>(textureImageCreateInfo);
+        vmaCreateImage(m_VmaAllocator, &c_textureImageCreateInfo, &vmaAllocationCI, &tempImage, &textureAllocation, nullptr);
+
+        PrepareTextureInfo retTexture;
+        retTexture.textureImage = tempImage;
+        retTexture.textureMemory = textureAllocation->GetMemory();
+
+        vk::ImageViewCreateInfo textureImageViewCreateInfo({}, retTexture.textureImage , vk::ImageViewType::e2D, vk::Format::eR8G8B8A8Srgb,
+            vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA),
+            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+        retTexture.textureImageView = device.createImageView(textureImageViewCreateInfo);
+        vk::SamplerCreateInfo textureSamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
+            vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0.0f, VK_TRUE, 1.0f, VK_FALSE, vk::CompareOp::eAlways,
+            0.0f, 1.0f, vk::BorderColor::eFloatOpaqueBlack, VK_FALSE);
+        retTexture.textureSampler = device.createSampler(textureSamplerCreateInfo);
+
+        //Copy
+        vk::BufferCreateInfo textureStageBufferInfo({}, import_texture.dataSize, vk::BufferUsageFlagBits::eTransferSrc);
+        auto& c_textureStageBufferInfo = static_cast<VkBufferCreateInfo>(textureStageBufferInfo);
+        VkBuffer textureStageBuffer;
+        VmaAllocationCreateInfo textureStageAllocationInfo{};
+        textureStageAllocationInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        textureStageAllocationInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        VmaAllocation textureStageAllocation;
+        vmaCreateBuffer(m_VmaAllocator, &c_textureStageBufferInfo, &textureStageAllocationInfo, &textureStageBuffer, &textureStageAllocation, nullptr);
+
+        void* data;
+        vmaMapMemory(m_VmaAllocator, textureStageAllocation, &data);
+        memcpy(data, import_texture.data, import_texture.dataSize);
+        vmaUnmapMemory(m_VmaAllocator, textureStageAllocation);
+
+        auto command = m_RenderingInfo.command;
+        auto cmd = command.BeginSingleCommand();
+
+        vk::ImageMemoryBarrier undefineToTransferDst(vk::AccessFlagBits::eNone, vk::AccessFlagBits::eTransferWrite,
+            vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, {}, {},
+            retTexture.textureImage, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+        cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, { undefineToTransferDst });
+
+        cmd.copyBufferToImage(textureStageBuffer, retTexture.textureImage, vk::ImageLayout::eTransferDstOptimal, { vk::BufferImageCopy(0, import_texture.texWidth, import_texture.texHeight,
+            vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), vk::Offset3D(0, 0, 0), vk::Extent3D(import_texture.texWidth, import_texture.texHeight, 1.0f)) });
+
+        vk::ImageMemoryBarrier transferDstToShaderRead(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead,
+            vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, {}, {},
+            retTexture.textureImage, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+        cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, { transferDstToShaderRead });
+
+        command.EndSingleCommand(cmd, m_RenderingInfo.device.GetRenderingQueue().GraphicQueue.value());
+        return retTexture;
     }
 
     TextureInfo RenderPartBase::LoadTexture(const std::string& file)

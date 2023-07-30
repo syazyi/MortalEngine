@@ -18,27 +18,40 @@ namespace mortal
         auto extent2D = m_RenderingInfo.window.GetExtent2D();
         {
             m_ModelPlane = PrepareModel("../../Asset/Model/Plane.obj");
-            m_ModelMonkeyHead = PrepareModel("../../Asset/Model/MonkeyHeadFaceXAxis.obj");
+            //m_ModelMonkeyHead = PrepareModel("../../Asset/Model/MonkeyHeadFaceXAxis.obj");
             m_ModelUBO = PrepareUniform<ModelUBO>();
-            m_ModelUBOData.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            m_ModelUBOData.model = GetBlendCorrectionModelMat();
             m_ModelUBOData.proj = glm::perspective(glm::radians(45.f), (float)extent2D.width / (float)extent2D.height, 0.1f, 100.f);
             m_ModelUBOData.proj[1][1] *= -1.f;
         }
+        //To DO: 加入了两个纹理，需要导入这两个纹理信息。先渲染一个平面试试。目前只加入了一个Pass， 还要加另外一个Pass，用于离屏渲染。
+        //离屏渲染用来将一些所要的位置，法线，颜色信息绘制到场景中。这里不绘制光源。
+        //第二个Pass再利用传入的信息绘制光源。
+
+        auto normal_texture_info = PrepareTexture("Deffered/stonefloor01_normal_rgba.png");
+        auto albedo_texture_info = PrepareTexture("Deffered/stonefloor01_color_rgba.png");
 
         //Descriptor
         {
             std::vector<vk::DescriptorPoolSize> poolsizes = {
-                vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1)
+                vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1),
+                vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2)
             };
             m_DescriptorPool = device.createDescriptorPool(vk::DescriptorPoolCreateInfo({}, 1, poolsizes));
             std::vector<vk::DescriptorSetLayoutBinding> bindings = {
-                vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, {})
+                vk::DescriptorSetLayoutBinding{0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex},
+                vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, normal_texture_info.textureSampler), 
+                vk::DescriptorSetLayoutBinding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, albedo_texture_info.textureSampler)
             };
             m_DescriptorSetLayout = device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo({}, bindings));
             m_PresentDescriptorSets = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(m_DescriptorPool, m_DescriptorSetLayout));
             auto presentBufferInfo = vk::DescriptorBufferInfo(m_ModelUBO.uniformBuffer, 0, sizeof(ModelUBO));
+            auto normalDecriptorImageInfo = vk::DescriptorImageInfo(normal_texture_info.textureSampler, normal_texture_info.textureImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+            auto albedoDecriptorImageInfo = vk::DescriptorImageInfo(albedo_texture_info.textureSampler, albedo_texture_info.textureImageView, vk::ImageLayout::eShaderReadOnlyOptimal);
             device.updateDescriptorSets({
-                    vk::WriteDescriptorSet(m_PresentDescriptorSets[0], 0, 0, vk::DescriptorType::eUniformBuffer, {}, presentBufferInfo)
+                    vk::WriteDescriptorSet(m_PresentDescriptorSets[0], 0, 0, vk::DescriptorType::eUniformBuffer, {}, presentBufferInfo), 
+                    vk::WriteDescriptorSet(m_PresentDescriptorSets[0], 1, 0, vk::DescriptorType::eCombinedImageSampler, normalDecriptorImageInfo),
+                    vk::WriteDescriptorSet(m_PresentDescriptorSets[0], 2, 0, vk::DescriptorType::eCombinedImageSampler, albedoDecriptorImageInfo),
                 }, {});
         }
 
@@ -46,11 +59,14 @@ namespace mortal
         //RenderPass Framebuffer
         {
             std::vector<vk::AttachmentDescription> attachDes = {
-                vk::AttachmentDescription({}, swapchain.GetSurfaceDetail().SurfaceFormats.format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,  vk::ImageLayout::ePresentSrcKHR)
+                vk::AttachmentDescription({}, swapchain.GetSurfaceDetail().SurfaceFormats.format, vk::SampleCountFlagBits::e1, 
+                vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare, 
+                vk::ImageLayout::eUndefined,  vk::ImageLayout::ePresentSrcKHR)
             };
-            vk::AttachmentReference colorAttachment(0, vk::ImageLayout::ePresentSrcKHR);
+            vk::AttachmentReference colorAttachment(0, vk::ImageLayout::eColorAttachmentOptimal);
             vk::SubpassDescription subpassDescruption({}, vk::PipelineBindPoint::eGraphics, {}, colorAttachment);
-            vk::SubpassDependency subpassDependency{};
+            vk::SubpassDependency subpassDependency(VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                vk::AccessFlagBits::eNone, vk::AccessFlagBits::eColorAttachmentWrite);
 
             // RenderCreateInfo2 createRenderPass2
             m_PresentRenderPass = device.createRenderPass(vk::RenderPassCreateInfo({}, attachDes, subpassDescruption, subpassDependency));
@@ -59,7 +75,7 @@ namespace mortal
                 std::vector<vk::ImageView> frameImageView = {
                     swapchainImage
                 };
-                m_PresentFrameBuffers.emplace_back(device.createFramebuffer(vk::FramebufferCreateInfo({}, m_PresentRenderPass, frameImageView, extent2D.width, extent2D.height)));
+                m_PresentFrameBuffers.emplace_back(device.createFramebuffer(vk::FramebufferCreateInfo({}, m_PresentRenderPass, frameImageView, extent2D.width, extent2D.height, 1)));
             }
         }
 
@@ -73,9 +89,9 @@ namespace mortal
             };
             std::vector<vk::VertexInputAttributeDescription> present_VIADs = {
                 vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Position)),
-                vk::VertexInputAttributeDescription(0, 1, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color)),
-                vk::VertexInputAttributeDescription(0, 2, vk::Format::eR32G32Sfloat, offsetof(Vertex, TexCoord)),
-                vk::VertexInputAttributeDescription(0, 3, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Normal))
+                vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color)),
+                vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, TexCoord)),
+                vk::VertexInputAttributeDescription(3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Normal))
             };
             vk::PipelineVertexInputStateCreateInfo VertexInputInfo({}, present_VIBDs, present_VIADs);
             vk::PipelineInputAssemblyStateCreateInfo InputAssemblyCI({}, vk::PrimitiveTopology::eTriangleList);
@@ -101,8 +117,8 @@ namespace mortal
             vk::PipelineDynamicStateCreateInfo DynamicStateCI({}, DynamicStates);
 
         //Present Pipeline
-            vk::ShaderModule PresentVertexShaderModule =  CreateShaderModule("Deferred/");
-            vk::ShaderModule PresentFragmentShaderModule =  CreateShaderModule("Deferred/");
+            vk::ShaderModule PresentVertexShaderModule =  CreateShaderModule("Deferred/Deffered_vert");
+            vk::ShaderModule PresentFragmentShaderModule =  CreateShaderModule("Deferred/Deffered_frag");
 
             std::vector<vk::PipelineShaderStageCreateInfo> ShaderStateCIs = {
                 vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, PresentVertexShaderModule, "main"),
@@ -125,6 +141,11 @@ namespace mortal
         auto CurrentFrame = m_RenderingInfo.CurrentFrame;
         auto drawCmd = m_RenderingInfo.command.GetCommandBuffers()[CurrentFrame];
         auto extent2D = m_RenderingInfo.window.GetExtent2D();
+        {
+            m_ModelUBOData.view = m_RenderingInfo.m_Camera.GetView();
+            memcpy(m_ModelUBO.mapped, &m_ModelUBOData, sizeof(m_ModelUBOData));
+        }
+
     //Draw
         {
             drawCmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
@@ -137,11 +158,11 @@ namespace mortal
             drawCmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PresentPipeline);
             drawCmd.setViewport(0, {vk::Viewport(0.0f, 0.0f, extent2D.width, extent2D.height, 0.0f, 1.0f)});
             drawCmd.setScissor(0, { vk::Rect2D({0, 0}, extent2D) });
-            drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PresentPipelineLayout, 0, { m_PresentDescriptorSets }, { 0 });
+            drawCmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PresentPipelineLayout, 0, { m_PresentDescriptorSets }, {});
          //Draw monkeyhead
-            drawCmd.bindVertexBuffers(0, m_ModelMonkeyHead.vertexBuffer, { 0 });
+            /*drawCmd.bindVertexBuffers(0, m_ModelMonkeyHead.vertexBuffer, { 0 });
             drawCmd.bindIndexBuffer(m_ModelMonkeyHead.indexBuffer, 0, vk::IndexType::eUint32);
-            drawCmd.drawIndexed(m_ModelMonkeyHead.modelInfo.indeices.size(), 1, 0, 0, 0);
+            drawCmd.drawIndexed(m_ModelMonkeyHead.modelInfo.indeices.size(), 1, 0, 0, 0);*/
         //Draw Plane
             drawCmd.bindVertexBuffers(0, m_ModelPlane.vertexBuffer, { 0 });
             drawCmd.bindIndexBuffer(m_ModelPlane.indexBuffer, 0, vk::IndexType::eUint32);
